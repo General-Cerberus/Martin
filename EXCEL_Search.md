@@ -5,7 +5,7 @@
 5. Replce phrases as instructed
 6. Hit run
 
-'
+'set
 	 Sub SameOldSearch()
 	 Dim sourceWs As Worksheet
 		Dim destinationWs As Worksheet
