@@ -1,10 +1,11 @@
-1. Search for 'Customize Ribbon' in the search bar, then click the 'Developer' box
-2. Go to 'Deloper' tab in excel
-3. Open 'Virtual Basic'
-4. Go to 'Insert' -> 'Module'
-5. Copy Paste code bellow
-6. Replace phrases as instructed
-7. Hit run
+1. Make a copy of the wroksheet you want to sort
+2. Search for 'Customize Ribbon' in the search bar, then click the 'Developer' box
+3. Go to 'Deloper' tab in excel
+4. Open 'Virtual Basic'
+5. Go to 'Insert' -> 'Module'
+6. Copy Paste code bellow
+7. Replace phrases as instructed
+8. Hit run
 
 
 	 	Sub SameOldSearch()
