@@ -2,7 +2,7 @@
 2. Open 'Virtual Basic'
 3. Go to 'Insert' -> 'Module'
 4. Copy Paste code bellow
-5. Replce phrases as instructed
+5. Replace phrases as instructed
 6. Hit run
 
 
