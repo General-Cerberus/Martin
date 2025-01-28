@@ -1,9 +1,10 @@
-1. Go to 'Deloper' tab in excel
-2. Open 'Virtual Basic'
-3. Go to 'Insert' -> 'Module'
-4. Copy Paste code bellow
-5. Replace phrases as instructed
-6. Hit run
+1. Search for 'Customize Ribbon' in the search bar, then click the 'Developer' box
+2. Go to 'Deloper' tab in excel
+3. Open 'Virtual Basic'
+4. Go to 'Insert' -> 'Module'
+5. Copy Paste code bellow
+6. Replace phrases as instructed
+7. Hit run
 
 
 	 	Sub SameOldSearch()
