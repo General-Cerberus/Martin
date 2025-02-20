@@ -10,7 +10,6 @@ using namespace std;
 #include <algorithm>
 #include <cstdlib>
 #include <fstream>
-using namespace std;
 
 static string Contig(string apple[], int n);
 
@@ -57,7 +56,7 @@ int main()
         {
             cout << "Error: Invalid filename\n";
             cout << endl;
-            assert(inStream.good()); // geeksforgeeks
+            assert(inStream.good());
         }
 
         // starts moving numbers
@@ -72,8 +71,6 @@ int main()
         // cout << tarray[2];
         inStream.close();
 
-        // cout << filename2 + "\n"; // remove later
-        // cout << filename2 + "\n";
         // open stream for full file
         inStream.open((char *)filename.c_str());
         bool valid_file_1 = inStream.good();
@@ -83,7 +80,7 @@ int main()
         {
             cout << "Error: Invalid filename\n";
             cout << endl;
-            assert(inStream.good()); // geeksforgeeks
+            assert(inStream.good());
         }
         for (int p = 0; p < 10000; p++)
         {
@@ -131,7 +128,6 @@ int main()
                     inStream.get(ch);
                 }
                 LabelArray[LabelArrayInt] = TempString;
-                // LabelArrayInt++;
                 TempString = "";
 
                 inStream.get(ch);
@@ -146,11 +142,8 @@ int main()
                 TempString = "";
 
                 TempString = "";
-                // inStream.get(ch);
-                // cout << "loop3\n";
                 while ((ch != al) && (!inStream.eof()))
                 {
-                    // inStream.get(ch);
                     if ((ch == 'T') || (ch == 'A') || (ch == 'G') || (ch == 'C'))
                     {
                         TempString = TempString + ch;
@@ -177,7 +170,6 @@ int main()
                         tarrayTest[i] = tarrayTest[i] + 1;
                     }
                 }
-                // cout << "itman\n";
             }
             LabelArrayInt = 0;
         }
@@ -231,12 +223,9 @@ static string Contig(string apple[], int n)
                     "tatgccgtcatcTATGCCGTCATCGTGTGtctttaa",
                     "tctttaaACTTTAAGGGGGG",
                     "GGGGGAAAAAAAAAA"};
-    // std::vector<std::string> strFrag = { fat[1], fat[2], fat[3] };
     vector<string> strFrag(apple, apple + n);
 
     string gege = "";
-
-    // std::vector<std::string> strFrag = fat[3];
 
     for (size_t repeat = 0; repeat < strFrag.size() - 1; ++repeat)
     {
