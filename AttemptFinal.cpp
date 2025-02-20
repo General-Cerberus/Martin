@@ -1,32 +1,31 @@
 // AttemptFinal.cpp : This file contains the 'main' function. Program execution begins and ends there.
 
-#include <iostream>
-#include <utility>
-#include <assert.h>
-using namespace std;
-#include <vector>
-#include <string>
-#include <stdio.h>
 #include <algorithm>
+#include <assert.h>
 #include <cstdlib>
 #include <fstream>
+#include <iostream>
+#include <stdio.h>
+#include <string>
+#include <utility>
+#include <vector>
+using namespace std;
 
 static string Contig(string apple[], int n);
 
 int main()
 {
     string Switcher;
-    cout << "Type 'S' to scan a Assession code database or type 'O' to combine overlapping sequences:";
+    cout << "Type 'S' to scan a Assession code database, or type 'O' to combine overlapping sequences:";
     cin >> Switcher;
 
     if (Switcher == "S")
     {
-
         ifstream inStream;
         ofstream myFile;
         int data;
-        string filename;
-        string filename2;
+        string filenameForSorting;
+        string filenameFASTANums;
         string outFile;
         string tarray[10000];
         int tarrayTest[10000];
@@ -36,49 +35,43 @@ int main()
         string LabelArray[1000];
         int total;
 
-        // setup
+        // Get file names from user.
         cout << "Enter filename to be sorted:";
-        cin >> filename;
+        cin >> filenameForSorting;
         cout << "Enter filename containg FASTA numbers to be collected:";
-        cin >> filename2;
+        cin >> filenameFASTANums;
         cout << "Enter filename to place collected info:";
         cin >> outFile;
 
-        cout << filename + "\n";
-        cout << filename2 + "\n";
-        // setup
-        // open Trinity numbers
-        inStream.open((char *)filename2.c_str());
-        bool valid_file_2 = inStream.good();
+        // Open Trinity numbers.
+        inStream.open((char *)filenameFASTANums.c_str());
 
-        // terminates program if file isn't good
-        if (!valid_file_2)
+        // Terminates program if file is invalid.
+        if (!inStream.good())
         {
-            cout << "Error: Invalid filename\n";
+            cout << "Error: Invalid filename.\n";
             cout << endl;
             assert(inStream.good());
         }
 
-        // starts moving numbers
+        // Start moving numbers.
         int i = 0;
         while (!inStream.eof())
         {
+            // Get numbers from file.
             getline(inStream, tarray[i]);
             i++;
             tarraySize++;
         }
-
-        // cout << tarray[2];
         inStream.close();
 
-        // open stream for full file
-        inStream.open((char *)filename.c_str());
-        bool valid_file_1 = inStream.good();
+        // Open stream for full file.
+        inStream.open((char *)filenameForSorting.c_str());
 
-        // terminates program if file isn't good
-        if (!valid_file_1)
+        // Terminate program if file is invalid.
+        if (!inStream.good())
         {
-            cout << "Error: Invalid filename\n";
+            cout << "Error: Invalid filename.\n";
             cout << endl;
             assert(inStream.good());
         }
@@ -86,7 +79,8 @@ int main()
         {
             tarrayTest[p] = 0;
         }
-        // create arrays for total data
+
+        // Create arrays for total data.
         string TempString = "";
         string Tester = "";
         int LabelArrayInt = 0;
@@ -95,33 +89,24 @@ int main()
         char ch;
         char al;
         char ai = 'A';
-
         char ti = 'T';
-
         char gi = 'G';
-
         char ci = 'C';
-
         char wh = ' ';
 
-        inStream.get(al); // set al equal to >
+        inStream.get(al); // Set al equal to >
 
-        // outFile = "Testy.txt";
         myFile.open(outFile);
-        // myFile << "Writing this to a file.\n";
-
         while (!inStream.eof())
         {
             while ((!inStream.eof()) && (LabelArrayInt < 1000))
             {
-                TempString = ""; // reset TempString at start
+                TempString = ""; // Reset TempString at start.
                 inStream.get(ch);
-                // cout << "loop1\n";
                 if (ch == al)
                 {
                     inStream.get(ch);
                 }
-                // cout << "loop2\n";
                 while (ch != ' ')
                 {
                     TempString = TempString + ch;
@@ -131,7 +116,7 @@ int main()
                 TempString = "";
 
                 inStream.get(ch);
-                // save or remove extra data
+                // Save or remove extra data.
                 while (!((ch == 'T') || (ch == 'A') || (ch == 'G') || (ch == 'C')))
                 {
 
@@ -175,8 +160,8 @@ int main()
         }
 
         string ttital = to_string(total);
-        myFile << "Total Inputs:" + ttital;
-        cout << "Total Inputs : " + ttital;
+        myFile << "Total Inputs: " + ttital;
+        cout << "Total Inputs: " + ttital;
 
         for (int i = 0; i <= tarraySize; i++)
         {
@@ -201,7 +186,7 @@ int main()
         {
             cout << "Insert sequence: ";
             cin >> pear[click];
-            cout << "Add another?(Y/N):";
+            cout << "Add another? (Y/N): ";
             cin >> clunk;
             click++;
             if (clunk != "Y")
@@ -213,7 +198,7 @@ int main()
     }
     else
     {
-        cout << "Invalid Input";
+        cout << "Invalid input.";
     }
 }
 
