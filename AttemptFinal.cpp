@@ -11,7 +11,9 @@
 #include <vector>
 using namespace std;
 
-static string Contig(string apple[], int n);
+static int fetchAndValidateFilenames(string filenameForSorting, string filenameFASTANums);
+static void overlapSearch();
+static string contig(string apple[], int n);
 
 int main()
 {
@@ -24,8 +26,8 @@ int main()
         ifstream inStream;
         ofstream myFile;
         int data;
-        string filenameForSorting;
         string filenameFASTANums;
+        string filenameForSorting;
         string outFile;
         string tarray[10000];
         int tarrayTest[10000];
@@ -35,24 +37,11 @@ int main()
         string LabelArray[1000];
         int total;
 
-        // Get file names from user.
-        cout << "Enter filename to be sorted:";
-        cin >> filenameForSorting;
-        cout << "Enter filename containg FASTA numbers to be collected:";
-        cin >> filenameFASTANums;
-        cout << "Enter filename to place collected info:";
-        cin >> outFile;
+        // Validate filenames.
+        fetchAndValidateFilenames(filenameForSorting, filenameFASTANums);
 
         // Open Trinity numbers.
         inStream.open((char *)filenameFASTANums.c_str());
-
-        // Terminates program if file is invalid.
-        if (!inStream.good())
-        {
-            cout << "Error: Invalid filename.\n";
-            cout << endl;
-            assert(inStream.good());
-        }
 
         // Start moving numbers.
         int i = 0;
@@ -67,14 +56,6 @@ int main()
 
         // Open stream for full file.
         inStream.open((char *)filenameForSorting.c_str());
-
-        // Terminate program if file is invalid.
-        if (!inStream.good())
-        {
-            cout << "Error: Invalid filename.\n";
-            cout << endl;
-            assert(inStream.good());
-        }
         for (int p = 0; p < 10000; p++)
         {
             tarrayTest[p] = 0;
@@ -96,6 +77,7 @@ int main()
 
         inStream.get(al); // Set al equal to >
 
+        // Open file to write to.
         myFile.open(outFile);
         while (!inStream.eof())
         {
@@ -124,7 +106,6 @@ int main()
                     inStream.get(ch);
                 }
                 LengthArray[LabelArrayInt] = TempString;
-                TempString = "";
 
                 TempString = "";
                 while ((ch != al) && (!inStream.eof()))
@@ -159,6 +140,10 @@ int main()
             LabelArrayInt = 0;
         }
 
+        // Close files.
+        inStream.close();
+        myFile.close();
+
         string ttital = to_string(total);
         myFile << "Total Inputs: " + ttital;
         cout << "Total Inputs: " + ttital;
@@ -178,23 +163,7 @@ int main()
     }
     else if (Switcher == "O")
     {
-        int click = 0;
-        int sitch = 0;
-        string clunk = "N";
-        string pear[20];
-        while (sitch == 0)
-        {
-            cout << "Insert sequence: ";
-            cin >> pear[click];
-            cout << "Add another? (Y/N): ";
-            cin >> clunk;
-            click++;
-            if (clunk != "Y")
-            {
-                sitch = 1;
-            }
-        }
-        Contig(pear, click);
+        overlapSearch();
     }
     else
     {
@@ -202,7 +171,65 @@ int main()
     }
 }
 
-static string Contig(string apple[], int n)
+static int fetchAndValidateFilenames(string filenameForSorting, string filenameFASTANums)
+{
+    // Get file names from user.
+    cout << "Enter filename to be sorted: ";
+    cin >> filenameForSorting;
+    cout << "Enter filename containg FASTA numbers to be collected: ";
+    cin >> filenameFASTANums;
+    cout << "Enter filename to place collected info: ";
+    cin >> outFile;
+
+    // Open Trinity numbers.
+    inStream.open((char *)filenameFASTANums.c_str());
+
+    // Terminates program if file is invalid.
+    if (!inStream.good())
+    {
+        cout << "Error: Invalid filename.\n";
+        cout << endl;
+        assert(inStream.good());
+    }
+
+    // Close file.
+    inStream.close();
+
+    // Open file to be sorted.
+    inStream.open((char *)filenameForSorting.c_str());
+
+    // Terminate program if file is invalid.
+    if (!inStream.good())
+    {
+        cout << "Error: Invalid filename.\n";
+        cout << endl;
+        assert(inStream.good());
+    }
+
+    return 0;
+}
+
+static void overlapSearch()
+{
+    int click = 0, sitch = 0;
+    string clunk = "N";
+    string pear[20];
+    while (sitch == 0)
+    {
+        cout << "Insert sequence: ";
+        cin >> pear[click];
+        cout << "Add another? (Y/N): ";
+        cin >> clunk;
+        click++;
+        if (clunk != "Y")
+        {
+            sitch = 1;
+        }
+    }
+    contig(pear, click);
+}
+
+static string contig(string apple[], int n)
 {
     string fat[] = {"GTAGATCGGAAGAGCACCGTCTGAACTCCAGTCACAACCTACGATCTCGtatgccgtcatc",
                     "tatgccgtcatcTATGCCGTCATCGTGTGtctttaa",
@@ -214,7 +241,7 @@ static string Contig(string apple[], int n)
 
     for (size_t repeat = 0; repeat < strFrag.size() - 1; ++repeat)
     {
-        std::vector<std::string> bestMatch = {std::to_string(2), "", ""}; // overlap score (minimum value 3), otherStr index, assembled str portion
+        std::vector<std::string> bestMatch = {std::to_string(2), "", ""}; // Overlap score (minimum value 3), otherStr index, assembled str portion
         for (size_t j = 1; j < strFrag.size(); ++j)
         {
             std::string otherStr = strFrag[j];
@@ -245,7 +272,7 @@ static string Contig(string apple[], int n)
 
     for (const auto &str : strFrag)
     {
-        gege = gege + str;
+        gege = +str;
         std::cout << str << std::endl;
     }
     std::cout << strFrag[0] << std::endl;
