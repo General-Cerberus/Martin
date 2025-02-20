@@ -1,4 +1,11 @@
-// AttemptFinal.cpp : This file contains the 'main' function. Program execution begins and ends there.
+/* 
+ * AttemptFinal.cpp : This file contains the 'main' function. Program execution begins and ends there.
+ * Purpose: This program is designed to take in a file of sequences and Trinity numbers, and output the sequences that match the Trinity numbers.
+ *          The program can also take in a series of sequences and output the combined sequence.
+ * Developed by Cale Johnson
+ * Copyright 2025
+ * Developed for Kathleen Martin's lab at Auburn University
+ */
 
 #include <algorithm>
 #include <assert.h>
