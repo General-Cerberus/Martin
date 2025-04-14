@@ -329,7 +329,18 @@ def contig(str_input: list[str]) -> str:
             for x in range(len(other_str)):
                 if other_str[x:] == str_input[i][: len(other_str) - x]:
                     if len(other_str) - x > best_match[0]:
-                        best_match = (len(other_str) - x, str(j), other_str[:x] + str_input[i])
-                if other_str[: len(other_str) - x] == str_input[i][len(str_input[i]) - len(other_str) + x:]:
+                        best_match = (
+                            len(other_str) - x,
+                            str(j),
+                            other_str[:x] + str_input[i],
+                        )
+                if (
+                    other_str[: len(other_str) - x]
+                    == str_input[i][len(str_input[i]) - len(other_str) + x :]
+                ):
                     if x > best_match[0]:
-                        best_match = (x, str(j), str_input[i] + other_str[len(other_str) - x:])
+                        best_match = (
+                            x,
+                            str(j),
+                            str_input[i] + other_str[len(other_str) - x :],
+                        )
