@@ -62,8 +62,6 @@ int main()
         //cout << tarray[2];
         inStream.close();
 
-        //cout << filename2 + "\n"; // remove later
-        //cout << filename2 + "\n";
         //open stream for full file
         inStream.open((char*)filename.c_str());
         bool valid_file_1 = inStream.good();
@@ -251,11 +249,15 @@ def main():
         print(f"Processing files {filename}, {filename2}, and {out_file}…")
 
         # Open files.
+        tarray = []
+        tarray_size = 0
         with open(filename2, "r") as in_stream_2:
             tarray = in_stream_2.readlines()
             tarray = [line.strip() for line in tarray]
             tarray_size = len(tarray)
             
+        full_array = []
+        label_array = []
         with open(filename, "r") as in_stream_1:
             full_array = in_stream_1.readlines()
             full_array = [line.strip() for line in full_array]
