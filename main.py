@@ -1,7 +1,4 @@
 """
-// AttemptFinal.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
-
 static int Contig(int* a, int* b);
 static string Contig(string apple[], int n);
 
@@ -100,7 +97,6 @@ int main()
 
         inStream.get(al); // set al equal to >
 
-        //outFile = "Testy.txt";
         myFile.open(outFile);
         //myFile << "Writing this to a file.\n";
 
@@ -189,59 +185,6 @@ int main()
             }
 
         }
-        if (0 == 1) { //for testing purposes
-            cout << "0";
-            cout << LabelArray[0] + "\n";
-            cout << FullArray[0] + "\n";
-            cout << "1";
-            cout << LabelArray[1] + "\n";
-            cout << FullArray[1] + "\n";
-            cout << "2";
-            cout << LabelArray[2] + "\n";
-            cout << FullArray[2] + "\n";
-            cout << "3";
-            cout << LabelArray[3] + "\n";
-            cout << FullArray[3] + "\n";
-
-
-            cout << "annna";
-            cout << tarray[0] + "\n";
-            cout << tarray[1] + "\n";
-            cout << tarray[2] + "\n";
-            cout << tarray[3] + "\n";
-        }
-
-
-
-        //std::cout << "Hello World!\n";
-
-
-
-        }
-        else if (Switcher == "O") {
-          int click = 0;
-          int sitch = 0;
-          string clunk = "N";
-          string pear[20];
-          while (sitch == 0) {
-          cout << "Insert sequence: ";
-          cin >> pear[click];
-          cout << "Add another?(Y/N):";
-          cin >> clunk;
-          click++;
-          if (clunk != "Y") {
-             sitch = 1;
-          }
-        }
-         Contig(pear, click);
-
-
-
-
-        }
-        else {
-                cout << "Invalid Input";
-        }
 }
 
 static string Contig(string apple[], int n) {
@@ -307,6 +250,18 @@ def main():
         # Placeholder for file processing logic.
         print(f"Processing files {filename}, {filename2}, and {out_file}…")
 
+        # Open files.
+        with open(filename2, "r") as in_stream_2:
+            tarray = in_stream_2.readlines()
+            tarray = [line.strip() for line in tarray]
+            tarray_size = len(tarray)
+            
+        with open(filename, "r") as in_stream_1:
+            full_array = in_stream_1.readlines()
+            full_array = [line.strip() for line in full_array]
+            label_array = []
+
+
     elif switcher == "O" or switcher == "0":
         sequences = []
         while True:
@@ -318,7 +273,7 @@ def main():
         contig(sequences)
 
     else:
-        print("Invalid Input")
+        print("Invalid input.")
 
 
 def contig(str_input: list[str]) -> str:
