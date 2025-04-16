@@ -24,7 +24,6 @@ int main()
         string LabelArray[1000];
         int total;
 
-
         //setup
         cout << "Enter filename to be sorted:";
         cin >> filename;
@@ -33,12 +32,9 @@ int main()
         cout << "Enter filename to place collected info:";
         cin >> outFile;
 
-
         //setup
         //open Trinity numbers
         inStream.open((char*)filename2.c_str());
-        bool valid_file_2 = inStream.good();
-
 
         //starts moving numbers
         int i = 0;
@@ -48,14 +44,11 @@ int main()
             tarraySize++;
         }
 
-
         inStream.close();
-
 
         //open stream for full file
         inStream.open((char*)filename.c_str());
         bool valid_file_1 = inStream.good();
-
 
         for (int p = 0; p < 10000; p++) {
             tarrayTest[p] = 0;
@@ -115,9 +108,6 @@ int main()
                 }
                 FullArray[LabelArrayInt] = TempString;
                 LabelArrayInt++;
-
-
-
             }
 
             for (int i = 0; i <= tarraySize; i++) {
@@ -131,13 +121,9 @@ int main()
                         myFile << FullArray[j] + "\n";
                         total++;
                         tarrayTest[i] = tarrayTest[i] + 1;
-
-
-
                     }
 
                 }
-                // cout << "itman\n";
             }
             LabelArrayInt = 0;
         }
@@ -153,7 +139,6 @@ int main()
             if (tarrayTest == 0) {
                 cout << "\nMiss at " + to_string(i);
             }
-
         }
 }
 
@@ -218,6 +203,18 @@ def main():
         out_file = input("Enter file name to place collected info: ").strip()
 
         print(f"Processing files {filename}, {filename2}, and {out_file}…")
+
+        tarray = []
+        tarray_size = 0
+        tarray_test = []
+        with open(filename2, "r") as in_stream:
+            tarray = in_stream.readlines()
+            tarray = [line.strip() for line in tarray]
+            tarray_size = len(tarray)
+            tarray_test = [0] * tarray_size
+
+        in_stream = open(filename, "r")
+        
     elif switcher == "O" or switcher == "0":
         sequences = []
         while True:
