@@ -4,11 +4,11 @@ static string Contig(string apple[], int n);
 
 int main()
 {
-        string Switcher;
-        cout << "Type 'S' to scan a Assession code database or type 'O' to combine overlapping sequences:";
-        cin >> Switcher;
+    string Switcher;
+    cout << "Type 'S' to scan a Assession code database or type 'O' to combine overlapping sequences:";
+    cin >> Switcher;
 
-        if (Switcher == "S") {
+    if (Switcher == "S") {
 
         ifstream inStream;
         ofstream myFile;
@@ -34,21 +34,10 @@ int main()
         cin >> outFile;
 
 
-        cout << filename + "\n";
-        cout << filename2 + "\n";
         //setup
         //open Trinity numbers
         inStream.open((char*)filename2.c_str());
         bool valid_file_2 = inStream.good();
-
-        //terminates program if file isn't good
-        if (!valid_file_2) {
-            cout << "Error: Invalid filename\n";
-            cout << endl;
-            assert(inStream.good()); //geeksforgeeks
-        }
-
-
 
 
         //starts moving numbers
@@ -59,22 +48,19 @@ int main()
             tarraySize++;
         }
 
-        //cout << tarray[2];
+
         inStream.close();
+
 
         //open stream for full file
         inStream.open((char*)filename.c_str());
         bool valid_file_1 = inStream.good();
 
-        //terminates program if file isn't good
-        if (!valid_file_1) {
-            cout << "Error: Invalid filename\n";
-            cout << endl;
-            assert(inStream.good()); //geeksforgeeks
-        }
+
         for (int p = 0; p < 10000; p++) {
             tarrayTest[p] = 0;
         }
+
         //create arrays for total data
         string TempString = "";
         string Tester = "";
@@ -84,40 +70,30 @@ int main()
         char ch;
         char al;
         char ai = 'A';
-
         char ti = 'T';
-
         char gi = 'G';
-
         char ci = 'C';
-
         char wh = ' ';
 
         inStream.get(al); // set al equal to >
 
         myFile.open(outFile);
-        //myFile << "Writing this to a file.\n";
-
 
         while (!inStream.eof()) {
             while ((!inStream.eof()) && (LabelArrayInt < 1000)) {
                 TempString = ""; //reset TempString at start
                 inStream.get(ch);
-                //cout << "loop1\n";
                 if (ch == al) {
                     inStream.get(ch);
                 }
-                //cout << "loop2\n";
                 while (ch != ' ') {
                     TempString = TempString + ch;
                     inStream.get(ch);
                 }
                 LabelArray[LabelArrayInt] = TempString;
-                //LabelArrayInt++;
                 TempString = "";
 
                 inStream.get(ch);
-                //turned off cause messing up
                 if (1 == 1) {   // save or remove extra data
                     while (!((ch == 'T') || (ch == 'A') || (ch == 'G') || (ch == 'C'))) {
 
@@ -130,10 +106,7 @@ int main()
 
 
                 TempString = "";
-                //inStream.get(ch);
-                //cout << "loop3\n";
                 while ((ch != al) && (!inStream.eof())) {
-                    //inStream.get(ch);
                     if ((ch == 'T') || (ch == 'A') || (ch == 'G') || (ch == 'C')) {
                         TempString = TempString + ch;
 
@@ -171,7 +144,6 @@ int main()
 
         string ttital = to_string(total);
         myFile << "Total Inputs:" + ttital;
-        cout << "Total Inputs : " + ttital;
 
         for (int i = 0; i <= tarraySize; i++) {
             if (tarrayTest[i] > 1) {
@@ -245,25 +217,7 @@ def main():
         ).strip()
         out_file = input("Enter file name to place collected info: ").strip()
 
-        # Placeholder for file processing logic.
         print(f"Processing files {filename}, {filename2}, and {out_file}…")
-
-        # Open files.
-        tarray = []
-        tarray_size = 0
-        with open(filename2, "r") as in_stream_2:
-            tarray = in_stream_2.readlines()
-            tarray = [line.strip() for line in tarray]
-            tarray_size = len(tarray)
-            
-        full_array = []
-        label_array = []
-        with open(filename, "r") as in_stream_1:
-            full_array = in_stream_1.readlines()
-            full_array = [line.strip() for line in full_array]
-            label_array = []
-
-
     elif switcher == "O" or switcher == "0":
         sequences = []
         while True:
