@@ -32,7 +32,6 @@ int main()
         cout << "Enter filename to place collected info:";
         cin >> outFile;
 
-        //setup
         //open Trinity numbers
         inStream.open((char*)filename2.c_str());
 
@@ -113,9 +112,6 @@ int main()
             for (int i = 0; i <= tarraySize; i++) {
                 for (int j = 0; j <= LabelArrayInt; j++) {
                     if (tarray[i] == LabelArray[j]) {
-                        cout << ">" + LabelArray[j];
-                        cout << " " + LengthArray[j];
-                        cout << FullArray[j] + "\n\n";
                         myFile << ">" + LabelArray[j];
                         myFile << " " + LengthArray[j];
                         myFile << FullArray[j] + "\n";
@@ -140,48 +136,6 @@ int main()
                 cout << "\nMiss at " + to_string(i);
             }
         }
-}
-
-static string Contig(string apple[], int n) {
-    string fat[] = { "GTAGATCGGAAGAGCACCGTCTGAACTCCAGTCACAACCTACGATCTCGtatgccgtcatc",
-         "tatgccgtcatcTATGCCGTCATCGTGTGtctttaa",
-         "tctttaaACTTTAAGGGGGG",
-     "GGGGGAAAAAAAAAA" };
-    vector<string> strFrag(apple, apple + n);
-
-    string gege = "";
-
-
-    for (size_t repeat = 0; repeat < strFrag.size() - 1; ++repeat) {
-        std::vector<std::string> bestMatch = { std::to_string(2), "", "" }; // overlap score (minimum value 3), otherStr index, assembled str portion
-        for (size_t j = 1; j < strFrag.size(); ++j) {
-            std::string otherStr = strFrag[j];
-            for (size_t x = 0; x < otherStr.length(); ++x) {
-                if (otherStr.substr(x) == strFrag[0].substr(0, otherStr.length() - x)) {
-                    if (otherStr.length() - x > std::stoi(bestMatch[0])) {
-                        bestMatch = { std::to_string(otherStr.length() - x), std::to_string(j), otherStr.substr(0, x) + strFrag[0] };
-                    }
-                }
-                if (otherStr.substr(0, otherStr.length() - x) == strFrag[0].substr(strFrag[0].length() - otherStr.length() + x)) {
-                    if (x > std::stoi(bestMatch[0])) {
-                        bestMatch = { std::to_string(x), std::to_string(j), strFrag[0] + otherStr.substr(otherStr.length() - x) };
-                    }
-                }
-            }
-        }
-        if (std::stoi(bestMatch[0]) > 2) {
-            strFrag[0] = bestMatch[2];
-            strFrag.erase(strFrag.begin() + std::stoi(bestMatch[1]));
-        }
-    }
-
-    for (const auto& str : strFrag) {
-        gege = gege + str;
-        std::cout << str << std::endl;
-    }
-    std::cout << strFrag[0] << std::endl;
-
-    return gege;
 }
 """
 
