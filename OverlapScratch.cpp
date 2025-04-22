@@ -15,18 +15,14 @@
 //
 #include <iostream>
 #include <vector>
-#include <string>#include <stdio.h>
+#include <string>
 #include <stdio.h>
 // #include <pthread.h>
-#include <iostream>
 #include <algorithm>
 #include <utility>
 #include <fstream>
-#include <iostream>
 #include <cstdlib>
 #include <assert.h>
-#include <string>
-#include <fstream>
 using namespace std;
 // static int Contig(int* a, int* b);
 static string Contig(string apple[], int n);
