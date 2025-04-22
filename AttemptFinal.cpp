@@ -133,20 +133,17 @@ int main()
                 TempString = "";
 
                 inStream.get(ch);
-                // turned off cause messing up
-                if (1 == 1)
-                { // save or remove extra data
-                    while (!((ch == 'T') || (ch == 'A') || (ch == 'G') || (ch == 'C')))
-                    {
 
-                        TempString = TempString + ch;
-                        inStream.get(ch);
-                    }
-                    LengthArray[LabelArrayInt] = TempString;
-                    TempString = "";
+                // save or remove extra data
+                while (!((ch == 'T') || (ch == 'A') || (ch == 'G') || (ch == 'C')))
+                {
+
+                    TempString = TempString + ch;
+                    inStream.get(ch);
                 }
-
+                LengthArray[LabelArrayInt] = TempString;
                 TempString = "";
+
                 // inStream.get(ch);
                 // cout << "loop3\n";
                 while ((ch != al) && (!inStream.eof()))
