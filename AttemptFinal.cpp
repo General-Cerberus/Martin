@@ -72,7 +72,6 @@ int main()
         // cout << tarray[2];
         inStream.close();
 
-        // cout << filename2 + "\n"; // remove later
         // cout << filename2 + "\n";
         // open stream for full file
         inStream.open((char *)filename.c_str());
@@ -109,7 +108,6 @@ int main()
 
         inStream.get(al); // set al equal to >
 
-        // outFile = "Testy.txt";
         myFile.open(outFile);
         // myFile << "Writing this to a file.\n";
 
@@ -222,8 +220,6 @@ int main()
             cout << tarray[2] + "\n";
             cout << tarray[3] + "\n";
         }
-
-        // std::cout << "Hello World!\n";
     }
     else if (Switcher == "O")
     {
