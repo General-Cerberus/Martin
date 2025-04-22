@@ -168,11 +168,11 @@ def main():
             tarray_test = [0] * tarray_size
 
         in_stream = open(filename, "r")
-        
+
         for i in range(in_stream):
             for j in range(tarray_size):
                 temp_string = ""
-                
+
     elif switcher == "O" or switcher == "0":
         sequences = []
         while True:
