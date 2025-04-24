@@ -27,8 +27,8 @@
 			Dim searchString As String
 	    
 			' Set your source and destination worksheets
-			Set sourceWs = ThisWorkbook.Sheets("virus") ' Change "Sheet1" to your source sheet name
-			Set destinationWs = ThisWorkbook.Sheets("Sheet1") ' Change "Sheet2" to your destination sheet name
+			Set sourceWs = ThisWorkbook.Sheets("Sheet1") ' Change "Sheet1" to your source sheet name
+			Set destinationWs = ThisWorkbook.Sheets("Sheet2") ' Change "Sheet2" to your destination sheet name
 	    
 			' Set the phrase to search for
 			searchPhrase = "virus" ' Change "YourPhraseHere" to the phrase you're looking for
@@ -39,8 +39,8 @@
 			' Set the destination row counter
 			destRow = 1
 	    
-			' Loop through each cell in the source column (Column A in this case)
-			For Each cell In sourceWs.Range("Y1:Y" & lastRow)
+			' Loop through each cell in the source column (Column Y in this case)
+			For Each cell In sourceWs.Range("Y1:Y" & lastRow)  'Remplace Y with the Collumn that contains species name(or whatever you wanna search through)
 	    		mainString = cell.Value
 	    		position = InStr(mainString, searchPhrase)
 	    		If position > 0 Then
