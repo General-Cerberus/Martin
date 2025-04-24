@@ -40,7 +40,7 @@
 			destRow = 1
 	    
 			' Loop through each cell in the source column (Column Y in this case)
-			For Each cell In sourceWs.Range("Y1:Y" & lastRow)  'Remplace Y with the Collumn that contains species name(or whatever you wanna search through)
+			For Each cell In sourceWs.Range("Y1:Y" & lastRow)  ' Remplace Y with the Collumn that contains species name(or whatever you wanna search through)
 	    		mainString = cell.Value
 	    		position = InStr(mainString, searchPhrase)
 	    		If position > 0 Then
