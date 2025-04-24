@@ -1,11 +1,17 @@
-1. Make a copy of the wroksheet you want to sort
-2. Search for 'Customize Ribbon' in the search bar, then click the 'Developer' box
-3. Go to 'Deloper' tab in excel
-4. Open 'Virtual Basic'
-5. Go to 'Insert' -> 'Module'
-6. Copy Paste code bellow
-7. Replace phrases as instructed
-8. Hit run
+1. Download .tabular file
+2. Convert .tabular file to .xlsx
+3. Open .xlsx file in Excel
+4. Optional: Make a copy of the worksheet you want to sort and make a new Excel
+5. Make at least one, empty Excel sheet for the output
+6. Search for 'Customize Ribbon' in the search bar, then click the 'Developer' box
+7. Go to 'Developer' tab in excel
+8. Open 'Virtual Basic'
+9. Go to 'Insert' -> 'Module'
+10. Copy Paste code bellow
+11. Replace phrases as instructed (Make sure the sheet names of the one you're sorting and the output sheet, Make sure the search phrase is what your wanting is searching by species name, and make sure it is scanning the column with the species name if doing species search)
+12. Hit run
+13. This should return your starting sheet unchanged as well as the output sheet now filled with data filtered to your request. If it failed to run, try cutting the original file into 500,000 row sized sheets and running each individually.
+
 
 
 	 	Sub SameOldSearch()
