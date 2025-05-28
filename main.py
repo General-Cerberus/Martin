@@ -156,22 +156,104 @@ def main():
         ).strip()
         out_file = input("Enter file name to place collected info: ").strip()
 
-        print(f"Processing files {filename}, {filename2}, and {out_file}…")
+        print(f"Processing files {filename}, {filename2}, and {out_file}...")
 
-        tarray = []
+        # Read IDs to be collected
+        tarray = [""] * 10000
         tarray_size = 0
-        tarray_test = []
+
         with open(filename2, "r") as in_stream:
-            tarray = in_stream.readlines()
-            tarray = [line.strip() for line in tarray]
-            tarray_size = len(tarray)
-            tarray_test = [0] * tarray_size
+            i = 0
+            for line in in_stream:
+                tarray[i] = line.strip()
+                i += 1
+                tarray_size += 1
 
-        in_stream = open(filename, "r")
+        # Initialize arrays
+        tarray_test = [0] * 10000
+        full_array = [""] * 1000
+        length_array = [""] * 1000
+        label_array = [""] * 1000
+        total = 0
 
-        for i in range(in_stream):
-            for j in range(tarray_size):
-                temp_string = ""
+        try:
+            with open(filename, "r") as in_stream, open(out_file, "w") as my_file:
+                content = in_stream.read()
+
+                # Initialize variables
+                label_array_int = 0
+
+                # Start parsing at the first '>'
+                pos = 0
+                while pos < len(content) and content[pos] != ">":
+                    pos += 1
+
+                if pos >= len(content):
+                    print("Invalid FASTA format: No '>' found")
+                    return
+
+                # Main parsing loop
+                while pos < len(content) and label_array_int < 1000:
+                    # Skip the '>'
+                    pos += 1
+
+                    # Parse label
+                    temp_string = ""
+                    while pos < len(content) and content[pos] != " ":
+                        temp_string += content[pos]
+                        pos += 1
+                    label_array[label_array_int] = temp_string
+                    temp_string = ""
+
+                    # Skip space
+                    if pos < len(content):
+                        pos += 1
+
+                    # Parse description/length
+                    while pos < len(content) and content[pos] not in "ATGC":
+                        temp_string += content[pos]
+                        pos += 1
+                    length_array[label_array_int] = temp_string
+                    temp_string = ""
+
+                    # Parse sequence
+                    while pos < len(content) and content[pos] != ">":
+                        if content[pos] in "ATGC":
+                            temp_string += content[pos]
+                        pos += 1
+                    full_array[label_array_int] = temp_string
+
+                    # Increment counter
+                    label_array_int += 1
+
+                    # Check if we've reached the end
+                    if pos >= len(content):
+                        break
+
+                # Match and write entries
+                for i in range(tarray_size):
+                    for j in range(label_array_int):
+                        if tarray[i] == label_array[j]:
+                            my_file.write(f">{label_array[j]}")
+                            my_file.write(f" {length_array[j]}")
+                            my_file.write(f"{full_array[j]}\n")
+                            total += 1
+                            tarray_test[i] += 1
+
+                # Write total
+                my_file.write(f"Total Inputs:{total}")
+
+            # Report repeats and misses
+            for i in range(tarray_size):
+                if tarray_test[i] > 1:
+                    print(f"\nRepeat at {i}")
+                if tarray_test[i] == 0:
+                    print(f"\nMiss at {i}")
+
+        except FileNotFoundError:
+            print("Error: One of the files could not be found.")
+        except Exception as e:
+            print(f"An error occurred: {e}")
 
     elif switcher == "O" or switcher == "0":
         sequences = []
