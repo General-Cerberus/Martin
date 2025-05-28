@@ -158,7 +158,7 @@ def main():
 
         print(f"Processing files {filename}, {filename2}, and {out_file}...")
 
-        # Read IDs to be collected
+        # Read IDs to be collected.
         tarray = [""] * 10000
         tarray_size = 0
 
@@ -169,7 +169,7 @@ def main():
                 i += 1
                 tarray_size += 1
 
-        # Initialize arrays
+        # Initialize arrays.
         tarray_test = [0] * 10000
         full_array = [""] * 1000
         length_array = [""] * 1000
@@ -180,10 +180,10 @@ def main():
             with open(filename, "r") as in_stream, open(out_file, "w") as my_file:
                 content = in_stream.read()
 
-                # Initialize variables
+                # Initialize variables.
                 label_array_int = 0
 
-                # Start parsing at the first '>'
+                # Start parsing at the first '>'.
                 pos = 0
                 while pos < len(content) and content[pos] != ">":
                     pos += 1
@@ -192,12 +192,12 @@ def main():
                     print("Invalid FASTA format: No '>' found")
                     return
 
-                # Main parsing loop
+                # Main parsing loop.
                 while pos < len(content) and label_array_int < 1000:
-                    # Skip the '>'
+                    # Skip the '>'.
                     pos += 1
 
-                    # Parse label
+                    # Parse label.
                     temp_string = ""
                     while pos < len(content) and content[pos] != " ":
                         temp_string += content[pos]
@@ -205,32 +205,32 @@ def main():
                     label_array[label_array_int] = temp_string
                     temp_string = ""
 
-                    # Skip space
+                    # Skip space.
                     if pos < len(content):
                         pos += 1
 
-                    # Parse description/length
+                    # Parse description/length.
                     while pos < len(content) and content[pos] not in "ATGC":
                         temp_string += content[pos]
                         pos += 1
                     length_array[label_array_int] = temp_string
                     temp_string = ""
 
-                    # Parse sequence
+                    # Parse sequence.
                     while pos < len(content) and content[pos] != ">":
                         if content[pos] in "ATGC":
                             temp_string += content[pos]
                         pos += 1
                     full_array[label_array_int] = temp_string
 
-                    # Increment counter
+                    # Increment counter.
                     label_array_int += 1
 
-                    # Check if we've reached the end
+                    # Check if we've reached the end.
                     if pos >= len(content):
                         break
 
-                # Match and write entries
+                # Match and write entries.
                 for i in range(tarray_size):
                     for j in range(label_array_int):
                         if tarray[i] == label_array[j]:
@@ -240,10 +240,10 @@ def main():
                             total += 1
                             tarray_test[i] += 1
 
-                # Write total
+                # Write total.
                 my_file.write(f"Total Inputs:{total}")
 
-            # Report repeats and misses
+            # Report repeats and misses.
             for i in range(tarray_size):
                 if tarray_test[i] > 1:
                     print(f"\nRepeat at {i}")
@@ -270,25 +270,64 @@ def main():
 
 
 def contig(str_input: list[str]) -> str:
-    for i in range(len(str_input) - 1):
-        best_match = (2, "", "")
-        for j in range(1, len(str_input)):
-            other_str = str_input[j]
-            for x in range(len(other_str)):
-                if other_str[x:] == str_input[i][: len(other_str) - x]:
-                    if len(other_str) - x > best_match[0]:
-                        best_match = (
-                            len(other_str) - x,
-                            str(j),
-                            other_str[:x] + str_input[i],
-                        )
-                if (
-                    other_str[: len(other_str) - x]
-                    == str_input[i][len(str_input[i]) - len(other_str) + x :]
-                ):
-                    if x > best_match[0]:
-                        best_match = (
-                            x,
-                            str(j),
-                            str_input[i] + other_str[len(other_str) - x :],
-                        )
+    # Make a copy of the input list to modify
+    sequences = str_input.copy()
+    
+    # Continue until no more merges are possible
+    merged = True
+    while merged and len(sequences) > 1:
+        merged = False
+        
+        for i in range(len(sequences)):
+            best_match = (2, -1, "")  # (overlap size, index, merged sequence)
+            
+            for j in range(len(sequences)):
+                if i == j:  # Skip comparing sequence to itself
+                    continue
+                
+                other_str = sequences[j]
+                curr_str = sequences[i]
+                
+                # Check for suffix of other matching prefix of current
+                for x in range(len(other_str)):
+                    # other_str[x:] matches beginning of curr_str
+                    if other_str[x:] == curr_str[:len(other_str) - x]:
+                        overlap_size = len(other_str) - x
+                        if overlap_size > best_match[0]:
+                            best_match = (
+                                overlap_size,
+                                j,
+                                other_str[:x] + curr_str
+                            )
+                
+                # Check for prefix of other matching suffix of current
+                for x in range(len(other_str)):
+                    # other_str[:len(other_str)-x] matches end of curr_str
+                    suffix_start = len(curr_str) - (len(other_str) - x)
+                    if suffix_start >= 0 and curr_str[suffix_start:] == other_str[:len(other_str) - x]:
+                        overlap_size = len(other_str) - x
+                        if overlap_size > best_match[0]:
+                            best_match = (
+                                overlap_size,
+                                j,
+                                curr_str + other_str[len(other_str) - x:]
+                            )
+            
+            # If we found a good match, merge the sequences
+            if best_match[1] != -1:
+                print(f"Merging sequences {i} and {best_match[1]}")
+                print(f"New sequence: {best_match[2]}")
+                
+                # Replace current sequence with merged sequence
+                sequences[i] = best_match[2]
+                
+                # Remove the other sequence (adjust index if needed)
+                sequences.pop(best_match[1] if best_match[1] < i else best_match[1] - 1)
+                
+                merged = True
+                break
+    
+    # Return the final merged sequence (should be the only one left)
+    if sequences:
+        return sequences[0]
+    return ""
