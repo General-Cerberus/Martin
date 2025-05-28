@@ -159,15 +159,18 @@ def main():
         print(f"Processing files {filename}, {filename2}, and {out_file}...")
 
         # Read IDs to be collected.
-        tarray = [""] * 10000
+        tarray = [""] * 10
         tarray_size = 0
 
         with open(filename2, "r") as in_stream:
             i = 0
             for line in in_stream:
+                tarray_size += 1
+                if len(tarray) <= i:
+                    # Resize tarray if necessary.
+                    tarray.extend([""] * 10)
                 tarray[i] = line.strip()
                 i += 1
-                tarray_size += 1
 
         # Initialize arrays.
         tarray_test = [0] * 10000
@@ -270,64 +273,67 @@ def main():
 
 
 def contig(str_input: list[str]) -> str:
-    # Make a copy of the input list to modify
+    # Make a copy of the input list to modify.
     sequences = str_input.copy()
-    
-    # Continue until no more merges are possible
+
+    # Continue until no more merges are possible.
     merged = True
     while merged and len(sequences) > 1:
         merged = False
-        
+
         for i in range(len(sequences)):
             best_match = (2, -1, "")  # (overlap size, index, merged sequence)
-            
+
             for j in range(len(sequences)):
-                if i == j:  # Skip comparing sequence to itself
+                if i == j:  # Skip comparing sequence to itself.
                     continue
-                
+
                 other_str = sequences[j]
                 curr_str = sequences[i]
-                
-                # Check for suffix of other matching prefix of current
+
+                # Check for suffix of other matching prefix of current.
                 for x in range(len(other_str)):
-                    # other_str[x:] matches beginning of curr_str
-                    if other_str[x:] == curr_str[:len(other_str) - x]:
+                    # other_str[x:] matches beginning of curr_str.
+                    if other_str[x:] == curr_str[: len(other_str) - x]:
                         overlap_size = len(other_str) - x
                         if overlap_size > best_match[0]:
-                            best_match = (
-                                overlap_size,
-                                j,
-                                other_str[:x] + curr_str
-                            )
-                
-                # Check for prefix of other matching suffix of current
+                            best_match = (overlap_size, j, other_str[:x] + curr_str)
+
+                # Check for prefix of other matching suffix of current.
                 for x in range(len(other_str)):
-                    # other_str[:len(other_str)-x] matches end of curr_str
+                    # other_str[:len(other_str)-x] matches end of curr_str.
                     suffix_start = len(curr_str) - (len(other_str) - x)
-                    if suffix_start >= 0 and curr_str[suffix_start:] == other_str[:len(other_str) - x]:
+                    if (
+                        suffix_start >= 0
+                        and curr_str[suffix_start:] == other_str[: len(other_str) - x]
+                    ):
                         overlap_size = len(other_str) - x
                         if overlap_size > best_match[0]:
                             best_match = (
                                 overlap_size,
                                 j,
-                                curr_str + other_str[len(other_str) - x:]
+                                curr_str + other_str[len(other_str) - x :],
                             )
-            
-            # If we found a good match, merge the sequences
+
+            # If we found a good match, merge the sequences.
             if best_match[1] != -1:
                 print(f"Merging sequences {i} and {best_match[1]}")
                 print(f"New sequence: {best_match[2]}")
-                
-                # Replace current sequence with merged sequence
+
+                # Replace current sequence with merged sequence.
                 sequences[i] = best_match[2]
-                
-                # Remove the other sequence (adjust index if needed)
+
+                # Remove the other sequence (adjust index if needed).
                 sequences.pop(best_match[1] if best_match[1] < i else best_match[1] - 1)
-                
+
                 merged = True
                 break
-    
-    # Return the final merged sequence (should be the only one left)
+
+    # Return the final merged sequence (should be the only one left).
     if sequences:
         return sequences[0]
     return ""
+
+
+if __name__ == "__main__":
+    main()
