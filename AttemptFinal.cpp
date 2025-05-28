@@ -47,7 +47,6 @@ int main()
 
         cout << filename + "\n";
         cout << filename2 + "\n";
-        // setup
         // open Trinity numbers
         inStream.open((char *)filename2.c_str());
         bool valid_file_2 = inStream.good();
@@ -57,7 +56,7 @@ int main()
         {
             cout << "Error: Invalid filename\n";
             cout << endl;
-            assert(inStream.good()); // geeksforgeeks
+            assert(inStream.good());
         }
 
         // starts moving numbers
@@ -69,10 +68,8 @@ int main()
             tarraySize++;
         }
 
-        // cout << tarray[2];
         inStream.close();
 
-        // cout << filename2 + "\n";
         // open stream for full file
         inStream.open((char *)filename.c_str());
         bool valid_file_1 = inStream.good();
@@ -117,19 +114,16 @@ int main()
             {
                 TempString = ""; // reset TempString at start
                 inStream.get(ch);
-                // cout << "loop1\n";
                 if (ch == al)
                 {
                     inStream.get(ch);
                 }
-                // cout << "loop2\n";
                 while (ch != ' ')
                 {
                     TempString = TempString + ch;
                     inStream.get(ch);
                 }
                 LabelArray[LabelArrayInt] = TempString;
-                // LabelArrayInt++;
                 TempString = "";
 
                 inStream.get(ch);
@@ -144,11 +138,8 @@ int main()
                 LengthArray[LabelArrayInt] = TempString;
                 TempString = "";
 
-                // inStream.get(ch);
-                // cout << "loop3\n";
                 while ((ch != al) && (!inStream.eof()))
                 {
-                    // inStream.get(ch);
                     if ((ch == 'T') || (ch == 'A') || (ch == 'G') || (ch == 'C'))
                     {
                         TempString = TempString + ch;
@@ -175,7 +166,6 @@ int main()
                         tarrayTest[i] = tarrayTest[i] + 1;
                     }
                 }
-                // cout << "itman\n";
             }
             LabelArrayInt = 0;
         }
