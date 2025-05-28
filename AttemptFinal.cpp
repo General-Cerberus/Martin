@@ -1,5 +1,4 @@
 // AttemptFinal.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
 
 #include <iostream>
 #include <stdio.h>
@@ -79,7 +78,7 @@ int main()
         {
             cout << "Error: Invalid filename\n";
             cout << endl;
-            assert(inStream.good()); // geeksforgeeks
+            assert(inStream.good());
         }
         for (int p = 0; p < 10000; p++)
         {
