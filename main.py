@@ -5,7 +5,7 @@ FASTA Sequence Tool with Tabular Filtering
 
 This program provides three modes of operation:
 1. Extract sequences by accession numbers ('S' mode)
-   - Inputs: 
+   - Inputs:
         - Accession list file
         - FASTA file
         - Output filename
@@ -46,13 +46,12 @@ def parse_fasta(fasta_file):
     current_seq = []
 
     try:
-        with open(fasta_file, 'r') as f:
+        with open(fasta_file, "r") as f:
             for line in f:
                 line = line.strip()
-                if line.startswith('>'):
+                if line.startswith(">"):
                     if current_id is not None:
-                        fasta_dict[current_id] = (
-                            current_header, ''.join(current_seq))
+                        fasta_dict[current_id] = (current_header, "".join(current_seq))
                     current_header = line[1:]
                     current_id = current_header.split()[0]
                     current_seq = []
@@ -60,7 +59,7 @@ def parse_fasta(fasta_file):
                     current_seq.append(line)
 
             if current_id is not None:
-                fasta_dict[current_id] = (current_header, ''.join(current_seq))
+                fasta_dict[current_id] = (current_header, "".join(current_seq))
         return fasta_dict
 
     except Exception as e:
@@ -79,7 +78,7 @@ def extract_sequences():
 
     # Read accessions with error handling
     try:
-        with open(accession_file, 'r') as f:
+        with open(accession_file, "r") as f:
             accession_list = [line.strip() for line in f if line.strip()]
     except FileNotFoundError:
         print(f"Error: Accession file {accession_file} not found")
@@ -93,7 +92,7 @@ def extract_sequences():
     missing_accessions = []
 
     try:
-        with open(output_file, 'w') as out:
+        with open(output_file, "w") as out:
             for acc in accession_list:
                 if acc in fasta_dict:
                     header, seq = fasta_dict[acc]
@@ -138,7 +137,7 @@ def assemble_sequences(seq_list):
 
             # Check suffix of A vs prefix of B
             min_len = min(len(a), len(b))
-            for overlap in range(min_len, min_overlap-1, -1):
+            for overlap in range(min_len, min_overlap - 1, -1):
                 if a.endswith(b[:overlap]):
                     merged = a + b[overlap:]
                     if overlap > best_match[0]:
@@ -146,7 +145,7 @@ def assemble_sequences(seq_list):
                     break
 
             # Check prefix of A vs suffix of B
-            for overlap in range(min_len, min_overlap-1, -1):
+            for overlap in range(min_len, min_overlap - 1, -1):
                 if b.endswith(a[:overlap]):
                     merged = b + a[overlap:]
                     if overlap > best_match[0]:
@@ -160,7 +159,7 @@ def assemble_sequences(seq_list):
         else:
             break  # No more overlaps found
 
-    return ''.join(seqs)
+    return "".join(seqs)
 
 
 def assemble_mode():
@@ -176,12 +175,12 @@ def assemble_mode():
             continue
 
         # Validate DNA sequence
-        if any(c not in 'ACGTacgt' for c in seq):
+        if any(c not in "ACGTacgt" for c in seq):
             print("Warning: Sequence contains non-DNA characters")
 
         sequences.append(seq)
 
-        if input("Add another sequence? (y/n): ").lower() != 'y':
+        if input("Add another sequence? (y/n): ").lower() != "y":
             break
 
     if not sequences:
@@ -209,11 +208,11 @@ def filter_tabular():
     output_file = input("Enter output filename: ")
 
     # Auto-detect delimiter
-    delimiters = ['\t', ',', ';', '|']
-    detected_delim = '\t'  # Default to tab
+    delimiters = ["\t", ",", ";", "|"]
+    detected_delim = "\t"  # Default to tab
 
     try:
-        with open(input_file, 'r', newline='') as f:
+        with open(input_file, "r", newline="") as f:
             sample = f.read(1024)
             sniffer = csv.Sniffer()
             dialect = sniffer.sniff(sample)
@@ -236,15 +235,15 @@ def filter_tabular():
     search_phrase = input("Enter search phrase: ").strip().lower()
 
     # Determine header presence
-    has_header = "y" in input(
-        "Does the file have a header row? (y/n): ").lower()
+    has_header = "y" in input("Does the file have a header row? (y/n): ").lower()
 
     matched_rows = 0
     skipped_header = False
 
     try:
-        with open(input_file, 'r', newline='') as infile, \
-                open(output_file, 'w', newline='') as outfile:
+        with open(input_file, "r", newline="") as infile, open(
+            output_file, "w", newline=""
+        ) as outfile:
 
             reader = csv.reader(infile, delimiter=detected_delim)
             writer = csv.writer(outfile, delimiter=detected_delim)
@@ -261,8 +260,7 @@ def filter_tabular():
                     if use_header:
                         # Find column by name (if header available)
                         if skipped_header:
-                            target_col = row[list(
-                                reader.fieldnames).index(col_id)]
+                            target_col = row[list(reader.fieldnames).index(col_id)]
                         else:
                             # We haven't read header yet
                             reader.fieldnames = row
@@ -290,9 +288,9 @@ def filter_tabular():
 
 def main():
     """Main program interface with enhanced user experience."""
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     print("FASTA & Tabular Processing Toolkit")
-    print("="*50)
+    print("=" * 50)
 
     while True:
         print("\nMain Menu:")
@@ -303,13 +301,13 @@ def main():
 
         choice = input("\nSelect mode: ").upper()
 
-        if choice == 'S':
+        if choice == "S":
             extract_sequences()
-        elif choice == 'O':
+        elif choice == "O":
             assemble_mode()
-        elif choice == 'F':
+        elif choice == "F":
             filter_tabular()
-        elif choice in ('Q', 'EXIT'):
+        elif choice in ("Q", "EXIT"):
             print("\nExiting program. Goodbye!")
             break
         else:
