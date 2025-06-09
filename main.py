@@ -1,212 +1,322 @@
+#!/usr/bin/env python3
 """
-static int Contig(int* a, int* b);
-static string Contig(string apple[], int n);
+FASTA Sequence Tool with Tabular Filtering
+==========================================
 
-int main()
-{
-    string Switcher;
-    cout << "Type 'S' to scan a Assession code database or type 'O' to combine overlapping sequences:";
-    cin >> Switcher;
+This program provides three modes of operation:
+1. Extract sequences by accession numbers ('S' mode)
+   - Inputs: 
+        - Accession list file
+        - FASTA file
+        - Output filename
+   - Output: FASTA file with matching sequences
 
-    if (Switcher == "S") {
+2. Assemble sequences by overlap ('O' mode)
+   - Input: User-provided DNA sequences
+   - Output: Assembled sequence
 
-        ifstream inStream;
-        ofstream myFile;
-        int data;
-        string filename;
-        string filename2;
-        string outFile;
-        string tarray[10000];
-        int tarrayTest[10000];
-        int tarraySize = 0;
-        string FullArray[1000];
-        string LengthArray[1000];
-        string LabelArray[1000];
-        int total;
+3. Filter tabular files ('F' mode)
+   - Inputs:
+        - Input tabular file (TSV/CSV)
+        - Output filename
+        - Column to search (index or name)
+        - Search phrase
+        - Optional: Delimiter (default: tab)
+   - Output: Filtered tabular file
 
-        //setup
-        cout << "Enter filename to be sorted:";
-        cin >> filename;
-        cout << "Enter filename containg FASTA numbers to be collected:";
-        cin >> filename2;
-        cout << "Enter filename to place collected info:";
-        cin >> outFile;
-
-        //open Trinity numbers
-        inStream.open((char*)filename2.c_str());
-
-        //starts moving numbers
-        int i = 0;
-        while (!inStream.eof()) {
-            getline(inStream, tarray[i]);
-            i++;
-            tarraySize++;
-        }
-
-        inStream.close();
-
-        //open stream for full file
-        inStream.open((char*)filename.c_str());
-        bool valid_file_1 = inStream.good();
-
-        for (int p = 0; p < 10000; p++) {
-            tarrayTest[p] = 0;
-        }
-
-        //create arrays for total data
-        string TempString = "";
-        string Tester = "";
-        int LabelArrayInt = 0;
-        int k = 0;
-        total = 0;
-        char ch;
-        char al;
-        char ai = 'A';
-        char ti = 'T';
-        char gi = 'G';
-        char ci = 'C';
-        char wh = ' ';
-
-        inStream.get(al); // set al equal to >
-
-        myFile.open(outFile);
-
-        while (!inStream.eof()) {
-            while ((!inStream.eof()) && (LabelArrayInt < 1000)) {
-                TempString = ""; //reset TempString at start
-                inStream.get(ch);
-                if (ch == al) {
-                    inStream.get(ch);
-                }
-                while (ch != ' ') {
-                    TempString = TempString + ch;
-                    inStream.get(ch);
-                }
-                LabelArray[LabelArrayInt] = TempString;
-                TempString = "";
-
-                inStream.get(ch);
-                if (1 == 1) {   // save or remove extra data
-                    while (!((ch == 'T') || (ch == 'A') || (ch == 'G') || (ch == 'C'))) {
-
-                        TempString = TempString + ch;
-                        inStream.get(ch);
-                    }
-                    LengthArray[LabelArrayInt] = TempString;
-                    TempString = "";
-                }
-
-
-                TempString = "";
-                while ((ch != al) && (!inStream.eof())) {
-                    if ((ch == 'T') || (ch == 'A') || (ch == 'G') || (ch == 'C')) {
-                        TempString = TempString + ch;
-
-                    }
-                    inStream.get(ch);
-                }
-                FullArray[LabelArrayInt] = TempString;
-                LabelArrayInt++;
-            }
-
-            for (int i = 0; i <= tarraySize; i++) {
-                for (int j = 0; j <= LabelArrayInt; j++) {
-                    if (tarray[i] == LabelArray[j]) {
-                        myFile << ">" + LabelArray[j];
-                        myFile << " " + LengthArray[j];
-                        myFile << FullArray[j] + "\n";
-                        total++;
-                        tarrayTest[i] = tarrayTest[i] + 1;
-                    }
-
-                }
-            }
-            LabelArrayInt = 0;
-        }
-
-        string ttital = to_string(total);
-        myFile << "Total Inputs:" + ttital;
-
-        for (int i = 0; i <= tarraySize; i++) {
-            if (tarrayTest[i] > 1) {
-                cout << "\nRepeat at " + to_string(i);
-            }
-
-            if (tarrayTest == 0) {
-                cout << "\nMiss at " + to_string(i);
-            }
-        }
-}
+All modes include comprehensive error handling and user feedback.
 """
+
+import csv
+import os
+
+
+def parse_fasta(fasta_file):
+    """
+    Parse FASTA files into a dictionary with accessions as keys.
+    Handles multi-line sequences and missing files gracefully.
+    """
+    if not os.path.exists(fasta_file):
+        print(f"Error: FASTA file {fasta_file} not found")
+        return {}
+
+    fasta_dict = {}
+    current_id = None
+    current_header = ""
+    current_seq = []
+
+    try:
+        with open(fasta_file, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith('>'):
+                    if current_id is not None:
+                        fasta_dict[current_id] = (
+                            current_header, ''.join(current_seq))
+                    current_header = line[1:]
+                    current_id = current_header.split()[0]
+                    current_seq = []
+                else:
+                    current_seq.append(line)
+
+            if current_id is not None:
+                fasta_dict[current_id] = (current_header, ''.join(current_seq))
+        return fasta_dict
+
+    except Exception as e:
+        print(f"Error parsing FASTA: {str(e)}")
+        return {}
+
+
+def extract_sequences():
+    """
+    Extract sequences based on accession numbers.
+    Provides detailed reporting of missing accessions.
+    """
+    accession_file = input("Enter accession list filename: ")
+    fasta_file = input("Enter FASTA filename: ")
+    output_file = input("Enter output filename: ")
+
+    # Read accessions with error handling
+    try:
+        with open(accession_file, 'r') as f:
+            accession_list = [line.strip() for line in f if line.strip()]
+    except FileNotFoundError:
+        print(f"Error: Accession file {accession_file} not found")
+        return
+
+    fasta_dict = parse_fasta(fasta_file)
+    if not fasta_dict:
+        return
+
+    found_count = 0
+    missing_accessions = []
+
+    try:
+        with open(output_file, 'w') as out:
+            for acc in accession_list:
+                if acc in fasta_dict:
+                    header, seq = fasta_dict[acc]
+                    out.write(f">{header}\n{seq}\n")
+                    found_count += 1
+                else:
+                    missing_accessions.append(acc)
+
+        print(f"\nExtraction complete!")
+        print(f"Total sequences extracted: {found_count}")
+        print(f"Total missing accessions: {len(missing_accessions)}")
+
+        if missing_accessions:
+            print("\nMissing accessions:")
+            for i, acc in enumerate(missing_accessions[:10], 1):
+                print(f"  {i}. {acc}")
+            if len(missing_accessions) > 10:
+                print(f"  ... and {len(missing_accessions)-10} more")
+
+    except IOError as e:
+        print(f"Output error: {str(e)}")
+
+
+def assemble_sequences(seq_list):
+    """
+    Assemble sequences using overlap detection with adjustable threshold.
+    Implements bidirectional matching (suffix-prefix and prefix-suffix).
+    """
+    if not seq_list:
+        return ""
+    if len(seq_list) == 1:
+        return seq_list[0]
+
+    seqs = [s.upper() for s in seq_list]  # Normalize case
+    min_overlap = 3  # Minimum required overlap
+
+    while len(seqs) > 1:
+        best_match = (0, -1, "")  # (overlap, index, merged_sequence)
+
+        for j in range(1, len(seqs)):
+            a, b = seqs[0], seqs[j]
+
+            # Check suffix of A vs prefix of B
+            min_len = min(len(a), len(b))
+            for overlap in range(min_len, min_overlap-1, -1):
+                if a.endswith(b[:overlap]):
+                    merged = a + b[overlap:]
+                    if overlap > best_match[0]:
+                        best_match = (overlap, j, merged)
+                    break
+
+            # Check prefix of A vs suffix of B
+            for overlap in range(min_len, min_overlap-1, -1):
+                if b.endswith(a[:overlap]):
+                    merged = b + a[overlap:]
+                    if overlap > best_match[0]:
+                        best_match = (overlap, j, merged)
+                    break
+
+        # Apply best match if found
+        if best_match[0] >= min_overlap:
+            seqs[0] = best_match[2]
+            del seqs[best_match[1]]
+        else:
+            break  # No more overlaps found
+
+    return ''.join(seqs)
+
+
+def assemble_mode():
+    """Interactive sequence assembly with input validation."""
+    sequences = []
+    print("\nSequence Assembly Mode")
+    print("----------------------")
+
+    while True:
+        seq = input("Insert sequence: ").strip()
+        if not seq:
+            print("Invalid sequence. Please enter at least 3 characters.")
+            continue
+
+        # Validate DNA sequence
+        if any(c not in 'ACGTacgt' for c in seq):
+            print("Warning: Sequence contains non-DNA characters")
+
+        sequences.append(seq)
+
+        if input("Add another sequence? (y/n): ").lower() != 'y':
+            break
+
+    if not sequences:
+        print("No sequences provided")
+        return
+
+    result = assemble_sequences(sequences)
+
+    print("\nAssembly complete!")
+    print(f"Final sequence length: {len(result)} bp")
+    print("\nAssembled sequence:")
+    print(result[:100] + "..." if len(result) > 100 else result)
+
+
+def filter_tabular():
+    """
+    Filter tabular files based on column content.
+    Supports both header-based and index-based column selection.
+    Handles large files efficiently.
+    """
+    print("\nTabular File Filter")
+    print("-------------------")
+
+    input_file = input("Enter input filename: ")
+    output_file = input("Enter output filename: ")
+
+    # Auto-detect delimiter
+    delimiters = ['\t', ',', ';', '|']
+    detected_delim = '\t'  # Default to tab
+
+    try:
+        with open(input_file, 'r', newline='') as f:
+            sample = f.read(1024)
+            sniffer = csv.Sniffer()
+            dialect = sniffer.sniff(sample)
+            detected_delim = dialect.delimiter
+            print(f"Detected delimiter: {repr(detected_delim)}")
+    except Exception:
+        print("Using default tab delimiter")
+
+    # Get column identifier
+    col_id = input("Enter column to search (name or 1-based index): ").strip()
+
+    # Check if column is numeric index
+    try:
+        col_index = int(col_id) - 1
+        use_header = False
+    except ValueError:
+        col_index = col_id
+        use_header = True
+
+    search_phrase = input("Enter search phrase: ").strip().lower()
+
+    # Determine header presence
+    has_header = "y" in input(
+        "Does the file have a header row? (y/n): ").lower()
+
+    matched_rows = 0
+    skipped_header = False
+
+    try:
+        with open(input_file, 'r', newline='') as infile, \
+                open(output_file, 'w', newline='') as outfile:
+
+            reader = csv.reader(infile, delimiter=detected_delim)
+            writer = csv.writer(outfile, delimiter=detected_delim)
+
+            for row in reader:
+                # Process header
+                if has_header and not skipped_header:
+                    writer.writerow(row)
+                    skipped_header = True
+                    continue
+
+                # Get target column
+                try:
+                    if use_header:
+                        # Find column by name (if header available)
+                        if skipped_header:
+                            target_col = row[list(
+                                reader.fieldnames).index(col_id)]
+                        else:
+                            # We haven't read header yet
+                            reader.fieldnames = row
+                            writer.writerow(row)
+                            skipped_header = True
+                            continue
+                    else:
+                        target_col = row[col_index]
+                except (IndexError, ValueError):
+                    continue
+
+                # Case-insensitive search
+                if search_phrase in target_col.lower():
+                    writer.writerow(row)
+                    matched_rows += 1
+
+        print(f"\nFiltering complete! Matched {matched_rows} rows")
+        print(f"Results saved to {output_file}")
+
+    except FileNotFoundError:
+        print(f"Error: Input file {input_file} not found")
+    except Exception as e:
+        print(f"Processing error: {str(e)}")
 
 
 def main():
-    switcher = (
-        input(
-            "Type 'S' to scan an accession code database or type 'O' to combine overlapping sequences: "
-        )
-        .strip()
-        .upper()
-    )
+    """Main program interface with enhanced user experience."""
+    print("\n" + "="*50)
+    print("FASTA & Tabular Processing Toolkit")
+    print("="*50)
 
-    if switcher == "S":
-        filename = input("Enter file name to be sorted: ").strip()
-        filename2 = input(
-            "Enter file name containing FASTA numbers to be collected: "
-        ).strip()
-        out_file = input("Enter file name to place collected info: ").strip()
+    while True:
+        print("\nMain Menu:")
+        print("  S - Extract sequences by accession")
+        print("  O - Assemble sequences by overlap")
+        print("  F - Filter tabular file by column content")
+        print("  Q - Quit")
 
-        print(f"Processing files {filename}, {filename2}, and {out_file}…")
+        choice = input("\nSelect mode: ").upper()
 
-        tarray = []
-        tarray_size = 0
-        tarray_test = []
-        with open(filename2, "r") as in_stream:
-            tarray = in_stream.readlines()
-            tarray = [line.strip() for line in tarray]
-            tarray_size = len(tarray)
-            tarray_test = [0] * tarray_size
+        if choice == 'S':
+            extract_sequences()
+        elif choice == 'O':
+            assemble_mode()
+        elif choice == 'F':
+            filter_tabular()
+        elif choice in ('Q', 'EXIT'):
+            print("\nExiting program. Goodbye!")
+            break
+        else:
+            print("Invalid selection. Please choose S, O, F, or Q")
 
-        in_stream = open(filename, "r")
-
-        for i in range(in_stream):
-            for j in range(tarray_size):
-                temp_string = ""
-
-    elif switcher == "O" or switcher == "0":
-        sequences = []
-        while True:
-            sequence = input("Insert sequence: ").strip()
-            sequences.append(sequence)
-            cont = input("Add another? (Y/N): ").strip().upper()
-            if cont != "Y":
-                break
-        contig(sequences)
-
-    else:
-        print("Invalid input.")
+        input("\nPress Enter to continue...")
 
 
-def contig(str_input: list[str]) -> str:
-    for i in range(len(str_input) - 1):
-        best_match = (2, "", "")
-        for j in range(1, len(str_input)):
-            other_str = str_input[j]
-            for x in range(len(other_str)):
-                if other_str[x:] == str_input[i][: len(other_str) - x]:
-                    if len(other_str) - x > best_match[0]:
-                        best_match = (
-                            len(other_str) - x,
-                            str(j),
-                            other_str[:x] + str_input[i],
-                        )
-                if (
-                    other_str[: len(other_str) - x]
-                    == str_input[i][len(str_input[i]) - len(other_str) + x :]
-                ):
-                    if x > best_match[0]:
-                        best_match = (
-                            x,
-                            str(j),
-                            str_input[i] + other_str[len(other_str) - x :],
-                        )
+if __name__ == "__main__":
+    main()
