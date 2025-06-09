@@ -1,30 +1,29 @@
 #!/usr/bin/env python3
 """
-FASTA Sequence Tool with Tabular Filtering
-==========================================
+==============================================
+= FASTA Sequence Tool with Tabular Filtering =
+==============================================
 
 This program provides three modes of operation:
 1. Extract sequences by accession numbers ('S' mode)
-   - Inputs:
-        - Accession list file
-        - FASTA file
-        - Output filename
-   - Output: FASTA file with matching sequences
+  - Inputs:
+    - Accession list file
+    - FASTA file
+    - Output filename
+  - Output: FASTA file with matching sequences
 
 2. Assemble sequences by overlap ('O' mode)
-   - Input: User-provided DNA sequences
-   - Output: Assembled sequence
+  - Input: User-provided DNA sequences
+  - Output: Assembled sequence
 
 3. Filter tabular files ('F' mode)
-   - Inputs:
-        - Input tabular file (TSV/CSV)
-        - Output filename
-        - Column to search (index or name)
-        - Search phrase
-        - Optional: Delimiter (default: tab)
-   - Output: Filtered tabular file
-
-All modes include comprehensive error handling and user feedback.
+  - Inputs:
+    - Input tabular file (TSV/CSV)
+    - Output filename
+    - Column to search (index or name)
+    - Search phrase
+    - Optional: Delimiter (default: tab)
+  - Output: Filtered tabular file
 """
 
 import csv
@@ -76,7 +75,7 @@ def extract_sequences():
     fasta_file = input("Enter FASTA filename: ")
     output_file = input("Enter output filename: ")
 
-    # Read accessions with error handling
+    # Read accessions with error handling.
     try:
         with open(accession_file, "r") as f:
             accession_list = [line.strip() for line in f if line.strip()]
