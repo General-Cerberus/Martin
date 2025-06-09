@@ -287,9 +287,9 @@ def filter_tabular():
 
 def main():
     """Main program interface with enhanced user experience."""
-    print("\n" + "=" * 50)
-    print("FASTA & Tabular Processing Toolkit")
-    print("=" * 50)
+    print("\n" + "=" * 38)
+    print("\n= FASTA & Tabular Processing Toolkit =")
+    print("\n" + "=" * 38)
 
     while True:
         print("\nMain Menu:")
@@ -300,13 +300,13 @@ def main():
 
         choice = input("\nSelect mode: ").upper()
 
-        if choice == "S":
+        if choice in ("S", "s", "EXTRACT", "extract"):
             extract_sequences()
-        elif choice == "O":
+        elif choice in ("O", "o", "0", "ASSEMBLE", "assemble"):
             assemble_mode()
-        elif choice == "F":
+        elif choice in ("F", "f", "FILTER", "filter"):
             filter_tabular()
-        elif choice in ("Q", "EXIT"):
+        elif choice in ("Q", "q", "QUIT", "quit"):
             print("\nExiting program. Goodbye!")
             break
         else:
