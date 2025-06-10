@@ -125,13 +125,13 @@ def assemble_sequences(seq_list):
     if len(seq_list) == 1:
         return seq_list
 
-    # Normalize case
+    # Normalize case.
     seqs = [s.upper() for s in seq_list]
 
-    # Get minimum overlap threshold from user
+    # Get minimum overlap threshold from user.
     min_overlap = int(input("Enter minimum overlap length (default 3): ") or 3)
     if min_overlap < 1:
-        print("Minimum overlap must be at least 1")
+        print("Overlap length must be at least 1.")
         return seq_list
     if min_overlap > 1000:
         print("Warning: Very high minimum overlap may lead to no matches.")
@@ -140,7 +140,7 @@ def assemble_sequences(seq_list):
     merged = [False] * len(seqs)
     contigs = []
 
-    # Try to build contigs from each unmerged sequence
+    # Try to build contigs from each unmerged sequence.
     for i in range(len(seqs)):
         # Print progress.
         if i % 10 == 0:
@@ -149,24 +149,24 @@ def assemble_sequences(seq_list):
         if merged[i]:
             continue
 
-        # Start a new contig with this sequence
+        # Start a new contig with this sequence.
         current_contig = seqs[i]
         merged[i] = True
         made_merge = True
 
-        # Keep trying to extend this contig until no more merges possible
+        # Keep trying to extend this contig until no more merges possible.
         while made_merge:
             made_merge = False
             best_match = (0, -1, "")  # (overlap, index, merged_sequence)
 
-            # Look for best overlap with any unmerged sequence
+            # Look for best overlap with any unmerged sequence.
             for j in range(len(seqs)):
                 if merged[j]:
                     continue
 
                 a, b = current_contig, seqs[j]
 
-                # Check suffix of contig vs prefix of candidate
+                # Check suffix of contig vs prefix of candidate.
                 min_len = min(len(a), len(b))
                 for overlap in range(min_len, min_overlap - 1, -1):
                     if a.endswith(b[:overlap]):
@@ -175,7 +175,7 @@ def assemble_sequences(seq_list):
                             best_match = (overlap, j, merged_seq)
                         break
 
-                # Check prefix of contig vs suffix of candidate
+                # Check prefix of contig vs suffix of candidate.
                 for overlap in range(min_len, min_overlap - 1, -1):
                     if b.endswith(a[:overlap]):
                         merged_seq = b + a[overlap:]
@@ -183,13 +183,13 @@ def assemble_sequences(seq_list):
                             best_match = (overlap, j, merged_seq)
                         break
 
-            # Apply best match if found
+            # Apply best match if found.
             if best_match[0] >= min_overlap:
                 current_contig = best_match[2]
                 merged[best_match[1]] = True
                 made_merge = True
 
-        # Add the finished contig to our results
+        # Add the finished contig to our results.
         contigs.append(current_contig)
 
     return contigs
@@ -302,10 +302,10 @@ def filter_tabular():
     input_file = input("Enter input filename: ")
     output_file = input("Enter output filename: ")
 
-    # Auto-detect delimiter
-    delimiters = ["\t", ",", ";", "|"]
-    detected_delim = "\t"  # Default to tab
+    # For now, let's assume tab-delimited files.
+    detected_delim = "\t"
 
+    # Try to detect delimiter from sample data.
     try:
         with open(input_file, "r", newline="") as f:
             sample = f.read(1024)
@@ -314,12 +314,12 @@ def filter_tabular():
             detected_delim = dialect.delimiter
             print(f"Detected delimiter: {repr(detected_delim)}")
     except Exception:
-        print("Using default tab delimiter")
+        print("Using default tab delimiter.")
 
-    # Get column identifier
+    # Get column identifier.
     col_id = input("Enter column to search (name or 1-based index): ").strip()
 
-    # Check if column is numeric index
+    # Check if column is numeric index.
     try:
         col_index = int(col_id) - 1
         use_header = False
@@ -329,7 +329,7 @@ def filter_tabular():
 
     search_phrase = input("Enter search phrase: ").strip().lower()
 
-    # Determine header presence
+    # Determine header presence.
     has_header = "y" in input("Does the file have a header row? (y/n): ").lower()
 
     matched_rows = 0
@@ -344,20 +344,20 @@ def filter_tabular():
             writer = csv.writer(outfile, delimiter=detected_delim)
 
             for row in reader:
-                # Process header
+                # Process header.
                 if has_header and not skipped_header:
                     writer.writerow(row)
                     skipped_header = True
                     continue
 
-                # Get target column
+                # Get target column.
                 try:
                     if use_header:
-                        # Find column by name (if header available)
+                        # Find column by name (if header available).
                         if skipped_header:
                             target_col = row[list(reader.fieldnames).index(col_id)]
                         else:
-                            # We haven't read header yet
+                            # We haven't read header yet.
                             reader.fieldnames = row
                             writer.writerow(row)
                             skipped_header = True
@@ -367,7 +367,7 @@ def filter_tabular():
                 except (IndexError, ValueError):
                     continue
 
-                # Case-insensitive search
+                # Case-insensitive search.
                 if search_phrase in target_col.lower():
                     writer.writerow(row)
                     matched_rows += 1
@@ -389,24 +389,24 @@ def main():
 
     while True:
         print("\nMain Menu:")
-        print("  S - Extract sequences by accession")
-        print("  O - Assemble sequences by overlap")
-        print("  F - Filter tabular file by column content")
-        print("  Q - Quit")
+        print("  s : Extract sequences by accession")
+        print("  o : Assemble sequences by overlap")
+        print("  f : Filter tabular file by column content")
+        print("  q : Quit")
 
         choice = input("\nSelect mode: ").upper()
 
-        if choice in ("S", "s", "EXTRACT", "extract"):
+        if choice.upper() in ("S", "EXTRACT"):
             extract_sequences()
-        elif choice in ("O", "o", "0", "ASSEMBLE", "assemble"):
+        elif choice.upper() in ("O", "0", "ASSEMBLE"):
             assemble_mode()
-        elif choice in ("F", "f", "FILTER", "filter"):
+        elif choice.upper() in ("F", "FILTER"):
             filter_tabular()
-        elif choice in ("Q", "q", "QUIT", "quit"):
+        elif choice.upper() in ("Q", "QUIT"):
             print("\nExiting program. Goodbye!")
             break
         else:
-            print("Invalid selection. Please choose S, O, F, or Q")
+            print("Invalid selection. Please choose s, o, f, or q.")
 
         input("\nPress Enter to continue...")
 
