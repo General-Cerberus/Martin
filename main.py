@@ -119,6 +119,10 @@ def extract_sequences():
         print(f"Output error: {str(e)}")
 
 
+def assembly_mp_worker(seq, other_seqs, min_overlap):
+    pass
+
+
 def assemble_sequences(seq_list):
     """
     Assemble sequences using overlap detection with adjustable threshold.
@@ -129,26 +133,29 @@ def assemble_sequences(seq_list):
     if len(seq_list) == 1:
         return seq_list
 
-    # Normalize case.
-    seqs = [s.upper() for s in seq_list]
+    # Normalize case and remove duplicates.
+    seqs = list(set([s.upper() for s in seq_list]))
 
     # We can probably save some time if we sort by length, shortest first, then check if any of the shorter sequences are completely contained in the longer ones.
+    """
     seqs.sort(key=len)
     print(f"Total sequences in original list: {len(seqs)}")
     for i in range(len(seqs) - 1):
-        for j in range(i + 1, len(seqs)):
+        # Report on progress every 100 sequences.
+        if i % 100 == 0:
+            print(f"Checking containment for sequence {i + 1}/{len(seqs)}…")
+        # Check against other sequences starting with the largest ones and working down, in order to maximize the chance of finding containment.
+        for j in range(len(seqs) - 1, i, -1):
             if len(seqs[i]) == len(seqs[j]):
-                if seqs[i] == seqs[j]:
-                    print(f"Found identical sequences, removing duplicate.")
-                    seqs.pop(i)
-                    break
-                else:
-                    continue  # No containment check needed for same length.
-            elif seqs[i] in seqs[j]:
-                print(f"Found containment, removing shorter sequence.")
-                seqs.pop(i)
+                # If they are the same length, skip this check.
+                continue
+            if seqs[i] in seqs[j]:
+                print("Found containment, removing.")
+                del seqs[i]
                 break
+    # After containment check, report how many sequences remain.
     print(f"Total sequences after containment check: {len(seqs)}")
+    """
 
     # Get minimum overlap threshold from user.
     min_overlap = int(input("Enter minimum overlap length (default 18): ") or 18)
@@ -162,9 +169,11 @@ def assemble_sequences(seq_list):
     merged = [False] * len(seqs)
     contigs = []
 
+    """
     # Set up multiprocessing.
-    # num_cores = os.cpu_count() or 1
-    # print(f"Using {num_cores} CPU cores for processing.")
+    num_cores = os.cpu_count() or 1
+    print(f"Using {num_cores} CPU cores for processing.")
+    """
 
     # Try to build contigs from each unmerged sequence.
     for i in range(len(seqs)):
