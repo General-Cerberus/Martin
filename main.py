@@ -213,9 +213,9 @@ def assemble_mode():
         if not user_input:
             break
 
-        # Check if input is an existing file
+        # Check if input is an existing file.
         if os.path.exists(user_input):
-            # Check if file appears to be in FASTA format
+            # Check if file appears to be in FASTA format.
             try:
                 with open(user_input, "r") as f:
                     first_line = f.readline().strip()
@@ -225,10 +225,10 @@ def assemble_mode():
                         if fasta_dict:
                             for acc, (header, seq) in fasta_dict.items():
                                 sequences.append(seq)
-                            print(f"Added {len(fasta_dict)} sequences from file")
+                            print(f"Added {len(fasta_dict)} sequences from file.")
                         else:
-                            print("No valid sequences found in the file")
-                        # Skip to next iteration after processing FASTA file
+                            print("No valid sequences found in the file.")
+                        # Skip to next iteration after processing FASTA file.
                         if (
                             len(sequences) > 0
                             and input("Add another sequence? (y/n): ").lower() != "y"
@@ -236,7 +236,7 @@ def assemble_mode():
                             break
                         continue
                     else:
-                        print("File exists but does not appear to be in FASTA format.")
+                        print("File exists, but does not appear to be in FASTA format.")
             except Exception as e:
                 print(f"Error reading file: {str(e)}")
 
@@ -245,36 +245,36 @@ def assemble_mode():
             print("Invalid sequence. Please enter at least 3 characters.")
             continue
 
-        # Validate DNA sequence
+        # Validate DNA sequence.
         if any(c not in "ACGTacgt" for c in user_input):
-            print("Warning: Sequence contains non-DNA characters")
+            print("Warning: Sequence contains non-DNA characters.")
 
         sequences.append(user_input)
-        print(f"Added sequence of length {len(user_input)}")
+        print(f"Added sequence of length {len(user_input)}.")
 
         if input("Add another sequence? (y/n): ").lower() != "y":
             break
 
     if not sequences:
-        print("No sequences provided")
+        print("No sequences provided.")
         return
 
-    print(f"\nAssembling {len(sequences)} sequences...")
+    print(f"\nAssembling {len(sequences)} sequences…")
     result_contigs = assemble_sequences(sequences)
 
     print("\nAssembly complete!")
     if len(result_contigs) == 1:
         print(
-            f"All sequences were assembled into one contig of length {len(result_contigs[0])} bp"
+            f"All sequences were assembled into one contig of length {len(result_contigs[0])} bp."
         )
         print("\nAssembled sequence:")
         result = result_contigs[0]
-        print(result[:100] + "..." if len(result) > 100 else result)
+        print(result[:128] + "…" if len(result) > 128 else result)
     else:
-        print(f"Assembled into {len(result_contigs)} separate contigs")
+        print(f"Assembled into {len(result_contigs)} separate contigs.")
         for i, contig in enumerate(result_contigs, 1):
             print(f"\nContig {i} (length: {len(contig)} bp):")
-            print(contig[:50] + "..." if len(contig) > 50 else contig)
+            print(contig[:64] + "…" if len(contig) > 64 else contig)
 
     # Save results to file
     output_file = input("Enter output filename for assembled sequence(s): ")
@@ -285,9 +285,9 @@ def assemble_mode():
                     out.write(f">assembled_sequence\n{contig}\n")
                 else:
                     out.write(f">contig_{i}_length_{len(contig)}\n{contig}\n")
-        print(f"Results saved to {output_file}")
+        print(f"Results saved to {output_file}.")
     except IOError as e:
-        print(f"Error saving result: {str(e)}")
+        print(f"Error saving result: {str(e)}.")
 
 
 def filter_tabular():
@@ -372,13 +372,13 @@ def filter_tabular():
                     writer.writerow(row)
                     matched_rows += 1
 
-        print(f"\nFiltering complete! Matched {matched_rows} rows")
-        print(f"Results saved to {output_file}")
+        print(f"\nFiltering complete! Matched {matched_rows} rows.")
+        print(f"Results saved to {output_file}.")
 
     except FileNotFoundError:
-        print(f"Error: Input file {input_file} not found")
+        print(f"Error: Input file {input_file} not found.")
     except Exception as e:
-        print(f"Processing error: {str(e)}")
+        print(f"Processing error: {str(e)}.")
 
 
 def main():
@@ -389,10 +389,10 @@ def main():
 
     while True:
         print("\nMain Menu:")
-        print("  s : Extract sequences by accession")
-        print("  o : Assemble sequences by overlap")
-        print("  f : Filter tabular file by column content")
-        print("  q : Quit")
+        print("  s : Extract sequences by accession.")
+        print("  o : Assemble sequences by overlap.")
+        print("  f : Filter tabular file by column content.")
+        print("  q : Quit.")
 
         choice = input("\nSelect mode: ").upper()
 
@@ -408,7 +408,7 @@ def main():
         else:
             print("Invalid selection. Please choose s, o, f, or q.")
 
-        input("\nPress Enter to continue...")
+        input("\nPress Enter to continue…")
 
 
 if __name__ == "__main__":
