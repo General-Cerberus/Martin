@@ -1,20 +1,23 @@
-#!/usr/bin/env python3
 """
 ==============================================
 = FASTA Sequence Tool with Tabular Filtering =
 ==============================================
 
 This program provides three modes of operation:
-1. Extract sequences by accession numbers ('S' mode)
+1. Extract sequences by accession numbers ('S' mode):
   - Inputs:
-    - Accession list file
-    - FASTA file
-    - Output filename
+    - Accession list file (.txt)
+    - FASTA file (.fasta)
+    - Output filename (.fasta)
   - Output: FASTA file with matching sequences
+            or error messages for missing accessions.
 
-2. Assemble sequences by overlap ('O' mode)
-  - Input: User-provided DNA sequences
-  - Output: Assembled sequence
+2. Assemble sequences by overlap ('O' mode):
+  - Input: User-provided DNA sequences or FASTA file names
+  - Output: Assembled sequence(s), optionally saved to a file (.fasta)
+  - Issues:
+    - This problem is NP-hard: https://cs.stackexchange.com/questions/93815/merge-a-set-of-strings-based-on-overlaps
+    - Maybe implement a greedy algorithm to find overlaps: https://en.wikipedia.org/wiki/Sequence_assembly#Assembly_algorithms
 
 3. Filter tabular files ('F' mode)
   - Inputs:
@@ -36,7 +39,7 @@ def parse_fasta(fasta_file):
     Handles multi-line sequences and missing files gracefully.
     """
     if not os.path.exists(fasta_file):
-        print(f"Error: FASTA file {fasta_file} not found")
+        print(f"Error: FASTA file {fasta_file} not found.")
         return {}
 
     fasta_dict = {}
@@ -62,7 +65,7 @@ def parse_fasta(fasta_file):
         return fasta_dict
 
     except Exception as e:
-        print(f"Error parsing FASTA: {str(e)}")
+        print(f"Error parsing FASTA: {str(e)}.")
         return {}
 
 
@@ -71,9 +74,9 @@ def extract_sequences():
     Extract sequences based on accession numbers.
     Provides detailed reporting of missing accessions.
     """
-    accession_file = input("Enter accession list filename: ")
-    fasta_file = input("Enter FASTA filename: ")
-    output_file = input("Enter output filename: ")
+    accession_file = input("Enter accession list filename (.txt): ")
+    fasta_file = input("Enter FASTA filename (.fasta): ")
+    output_file = input("Enter output filename (.fasta): ")
 
     # Read accessions with error handling.
     try:
@@ -118,7 +121,7 @@ def extract_sequences():
 def assemble_sequences(seq_list):
     """
     Assemble sequences using overlap detection with adjustable threshold.
-    Returns a list of assembled contigs - sequences are only joined if they overlap.
+    Returns a list of assembled contigs. Sequences are only joined if they overlap.
     """
     if not seq_list:
         return []
@@ -167,21 +170,18 @@ def assemble_sequences(seq_list):
                 a, b = current_contig, seqs[j]
 
                 # Check suffix of contig vs prefix of candidate.
-                min_len = min(len(a), len(b))
-                for overlap in range(min_len, min_overlap - 1, -1):
-                    if a.endswith(b[:overlap]):
-                        merged_seq = a + b[overlap:]
-                        if overlap > best_match[0]:
-                            best_match = (overlap, j, merged_seq)
-                        break
+                if a.endswith(b[:min_overlap]):
+                    merged_seq = a + b[min_overlap:]
+                    if min_overlap > best_match[0]:
+                        best_match = (min_overlap, j, merged_seq)
+                    break
 
                 # Check prefix of contig vs suffix of candidate.
-                for overlap in range(min_len, min_overlap - 1, -1):
-                    if b.endswith(a[:overlap]):
-                        merged_seq = b + a[overlap:]
-                        if overlap > best_match[0]:
-                            best_match = (overlap, j, merged_seq)
-                        break
+                if b.endswith(a[:min_overlap]):
+                    merged_seq = b + a[min_overlap:]
+                    if min_overlap > best_match[0]:
+                        best_match = (min_overlap, j, merged_seq)
+                    break
 
             # Apply best match if found.
             if best_match[0] >= min_overlap:
@@ -240,7 +240,7 @@ def assemble_mode():
             except Exception as e:
                 print(f"Error reading file: {str(e)}")
 
-        # If we get here, treat as direct sequence input
+        # If we get here, treat as direct sequence input.
         if len(user_input) < 3:
             print("Invalid sequence. Please enter at least 3 characters.")
             continue
