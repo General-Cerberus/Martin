@@ -132,7 +132,7 @@ def assemble_sequences(seq_list):
     seqs = [s.upper() for s in seq_list]
 
     # Get minimum overlap threshold from user.
-    min_overlap = int(input("Enter minimum overlap length (default 3): ") or 3)
+    min_overlap = int(input("Enter minimum overlap length (default 18): ") or 18)
     if min_overlap < 1:
         print("Overlap length must be at least 1.")
         return seq_list
