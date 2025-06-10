@@ -118,66 +118,139 @@ def extract_sequences():
 def assemble_sequences(seq_list):
     """
     Assemble sequences using overlap detection with adjustable threshold.
-    Implements bidirectional matching (suffix-prefix and prefix-suffix).
+    Returns a list of assembled contigs - sequences are only joined if they overlap.
     """
     if not seq_list:
-        return ""
+        return []
     if len(seq_list) == 1:
-        return seq_list[0]
+        return seq_list
 
-    seqs = [s.upper() for s in seq_list]  # Normalize case
-    min_overlap = 3  # Minimum required overlap
+    # Normalize case
+    seqs = [s.upper() for s in seq_list]
 
-    while len(seqs) > 1:
-        best_match = (0, -1, "")  # (overlap, index, merged_sequence)
+    # Get minimum overlap threshold from user
+    min_overlap = int(input("Enter minimum overlap length (default 3): ") or 3)
+    if min_overlap < 1:
+        print("Minimum overlap must be at least 1")
+        return seq_list
+    if min_overlap > 1000:
+        print("Warning: Very high minimum overlap may lead to no matches.")
 
-        for j in range(1, len(seqs)):
-            a, b = seqs[0], seqs[j]
+    # Track which sequences have been merged
+    merged = [False] * len(seqs)
+    contigs = []
 
-            # Check suffix of A vs prefix of B
-            min_len = min(len(a), len(b))
-            for overlap in range(min_len, min_overlap - 1, -1):
-                if a.endswith(b[:overlap]):
-                    merged = a + b[overlap:]
-                    if overlap > best_match[0]:
-                        best_match = (overlap, j, merged)
-                    break
+    # Try to build contigs from each unmerged sequence
+    for i in range(len(seqs)):
+        # Print progress.
+        if i % 10 == 0:
+            print(f"Processing sequence {i + 1}/{len(seqs)}…")
 
-            # Check prefix of A vs suffix of B
-            for overlap in range(min_len, min_overlap - 1, -1):
-                if b.endswith(a[:overlap]):
-                    merged = b + a[overlap:]
-                    if overlap > best_match[0]:
-                        best_match = (overlap, j, merged)
-                    break
+        if merged[i]:
+            continue
 
-        # Apply best match if found
-        if best_match[0] >= min_overlap:
-            seqs[0] = best_match[2]
-            del seqs[best_match[1]]
-        else:
-            break  # No more overlaps found
+        # Start a new contig with this sequence
+        current_contig = seqs[i]
+        merged[i] = True
+        made_merge = True
 
-    return "".join(seqs)
+        # Keep trying to extend this contig until no more merges possible
+        while made_merge:
+            made_merge = False
+            best_match = (0, -1, "")  # (overlap, index, merged_sequence)
+
+            # Look for best overlap with any unmerged sequence
+            for j in range(len(seqs)):
+                if merged[j]:
+                    continue
+
+                a, b = current_contig, seqs[j]
+
+                # Check suffix of contig vs prefix of candidate
+                min_len = min(len(a), len(b))
+                for overlap in range(min_len, min_overlap - 1, -1):
+                    if a.endswith(b[:overlap]):
+                        merged_seq = a + b[overlap:]
+                        if overlap > best_match[0]:
+                            best_match = (overlap, j, merged_seq)
+                        break
+
+                # Check prefix of contig vs suffix of candidate
+                for overlap in range(min_len, min_overlap - 1, -1):
+                    if b.endswith(a[:overlap]):
+                        merged_seq = b + a[overlap:]
+                        if overlap > best_match[0]:
+                            best_match = (overlap, j, merged_seq)
+                        break
+
+            # Apply best match if found
+            if best_match[0] >= min_overlap:
+                current_contig = best_match[2]
+                merged[best_match[1]] = True
+                made_merge = True
+
+        # Add the finished contig to our results
+        contigs.append(current_contig)
+
+    return contigs
 
 
 def assemble_mode():
-    """Interactive sequence assembly with input validation."""
+    """
+    Interactive sequence assembly with input validation.
+    Accepts manually entered sequences or sequences from a FASTA file.
+    """
     sequences = []
     print("\nSequence Assembly Mode")
     print("----------------------")
+    print("You can enter sequences directly or provide a FASTA file path")
 
     while True:
-        seq = input("Insert sequence: ").strip()
-        if not seq:
+        user_input = input(
+            "Enter sequence or FASTA file path (or press Enter to finish adding): "
+        ).strip()
+
+        if not user_input:
+            break
+
+        # Check if input is an existing file
+        if os.path.exists(user_input):
+            # Check if file appears to be in FASTA format
+            try:
+                with open(user_input, "r") as f:
+                    first_line = f.readline().strip()
+                    if first_line.startswith(">"):
+                        print(f"Reading sequences from FASTA file: {user_input}")
+                        fasta_dict = parse_fasta(user_input)
+                        if fasta_dict:
+                            for acc, (header, seq) in fasta_dict.items():
+                                sequences.append(seq)
+                            print(f"Added {len(fasta_dict)} sequences from file")
+                        else:
+                            print("No valid sequences found in the file")
+                        # Skip to next iteration after processing FASTA file
+                        if (
+                            len(sequences) > 0
+                            and input("Add another sequence? (y/n): ").lower() != "y"
+                        ):
+                            break
+                        continue
+                    else:
+                        print("File exists but does not appear to be in FASTA format.")
+            except Exception as e:
+                print(f"Error reading file: {str(e)}")
+
+        # If we get here, treat as direct sequence input
+        if len(user_input) < 3:
             print("Invalid sequence. Please enter at least 3 characters.")
             continue
 
         # Validate DNA sequence
-        if any(c not in "ACGTacgt" for c in seq):
+        if any(c not in "ACGTacgt" for c in user_input):
             print("Warning: Sequence contains non-DNA characters")
 
-        sequences.append(seq)
+        sequences.append(user_input)
+        print(f"Added sequence of length {len(user_input)}")
 
         if input("Add another sequence? (y/n): ").lower() != "y":
             break
@@ -186,12 +259,35 @@ def assemble_mode():
         print("No sequences provided")
         return
 
-    result = assemble_sequences(sequences)
+    print(f"\nAssembling {len(sequences)} sequences...")
+    result_contigs = assemble_sequences(sequences)
 
     print("\nAssembly complete!")
-    print(f"Final sequence length: {len(result)} bp")
-    print("\nAssembled sequence:")
-    print(result[:100] + "..." if len(result) > 100 else result)
+    if len(result_contigs) == 1:
+        print(
+            f"All sequences were assembled into one contig of length {len(result_contigs[0])} bp"
+        )
+        print("\nAssembled sequence:")
+        result = result_contigs[0]
+        print(result[:100] + "..." if len(result) > 100 else result)
+    else:
+        print(f"Assembled into {len(result_contigs)} separate contigs")
+        for i, contig in enumerate(result_contigs, 1):
+            print(f"\nContig {i} (length: {len(contig)} bp):")
+            print(contig[:50] + "..." if len(contig) > 50 else contig)
+
+    # Save results to file
+    output_file = input("Enter output filename for assembled sequence(s): ")
+    try:
+        with open(output_file, "w") as out:
+            for i, contig in enumerate(result_contigs, 1):
+                if len(result_contigs) == 1:
+                    out.write(f">assembled_sequence\n{contig}\n")
+                else:
+                    out.write(f">contig_{i}_length_{len(contig)}\n{contig}\n")
+        print(f"Results saved to {output_file}")
+    except IOError as e:
+        print(f"Error saving result: {str(e)}")
 
 
 def filter_tabular():
