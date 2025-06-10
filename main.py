@@ -17,6 +17,7 @@ This program provides three modes of operation:
   - Output: Assembled sequence(s), optionally saved to a file (.fasta)
   - Issues:
     - This problem is NP-hard: https://cs.stackexchange.com/questions/93815/merge-a-set-of-strings-based-on-overlaps
+      - https://en.wikipedia.org/wiki/NP-hardness
     - Maybe implement a greedy algorithm to find overlaps: https://en.wikipedia.org/wiki/Sequence_assembly#Assembly_algorithms
 
 3. Filter tabular files ('F' mode)
