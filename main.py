@@ -19,6 +19,13 @@ This program provides three modes of operation:
     - This problem is NP-hard: https://cs.stackexchange.com/questions/93815/merge-a-set-of-strings-based-on-overlaps
       - https://en.wikipedia.org/wiki/NP-hardness
     - Maybe implement a greedy algorithm to find overlaps: https://en.wikipedia.org/wiki/Sequence_assembly#Assembly_algorithms
+  - To add:
+    - Multiprocessing support.
+    - Mutation tolerance.
+      - Partial string matching.
+      - Amino acid sequence matching vs. nucleotide sequence matching.
+    - BLASTX integration for pre-sorting of sequences.
+      - Partitioning the data in advance will drastically reduce the number of comparisons needed.
 
 3. Filter tabular files ('F' mode)
   - Inputs:
