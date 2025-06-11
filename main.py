@@ -21,6 +21,8 @@ This program provides three modes of operation:
     - Maybe implement a greedy algorithm to find overlaps: https://en.wikipedia.org/wiki/Sequence_assembly#Assembly_algorithms
   - To add:
     - Multiprocessing support.
+      - Could array comparisons be more efficient than string comparisons?
+      - https://numpy.org/doc/stable/reference/generated/numpy.isin.html#numpy.isin
     - Mutation tolerance.
       - Partial string matching.
       - Amino acid sequence matching vs. nucleotide sequence matching.
