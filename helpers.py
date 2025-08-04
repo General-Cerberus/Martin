@@ -185,3 +185,176 @@ def cluster_by_genomic_range(sequences, overlap_threshold=0.8):
             clusters.append(current_cluster)
 
     return clusters
+
+
+"""
+PROBABILISTIC ASSEMBLY FUNCTIONS
+"""
+import math
+
+
+def find_best_paths(graph, sequences):
+    """Find highest probability paths using dynamic programming"""
+    # Find starting nodes (nodes with no incoming edges)
+    all_targets = set()
+    for edges in graph.values():
+        for edge in edges:
+            all_targets.add(edge[0])  # edge[0] is the neighbor index
+
+    start_nodes = [i for i in graph if i not in all_targets]
+
+    # If no clear start nodes, use all nodes
+    if not start_nodes:
+        start_nodes = list(graph.keys())
+
+    # Track best paths
+    best_paths = []
+
+    for start in start_nodes:
+        # Initialize DP table: (current_node, path, path_score)
+        dp = [(start, [start], 0.0)]
+        completed_paths = []
+
+        while dp:
+            current, path, score = dp.pop(0)
+            extended = False
+
+            # Check if current node has outgoing edges
+            if current in graph:
+                for edge in graph[current]:
+                    neighbor, edge_score, _ = edge
+                    # Avoid cycles
+                    if neighbor in path:
+                        continue
+
+                    # Calculate new path score
+                    new_score = score + edge_score
+                    new_path = path + [neighbor]
+                    dp.append((neighbor, new_path, new_score))
+                    extended = True
+
+            # If no extensions, path is complete
+            if not extended:
+                completed_paths.append((path, score))
+
+        # Find best path from this start node
+        if completed_paths:
+            best_path = max(completed_paths, key=lambda x: x[1])[0]
+            best_paths.append(best_path)
+
+    # Convert paths to sequences
+    contigs = []
+    for path in best_paths:
+        if len(path) == 1:
+            contigs.append(sequences[path[0]])
+            continue
+
+        # Build contig from path
+        current_seq = sequences[path[0]]
+        for i in range(1, len(path)):
+            prev_idx = path[i - 1]
+            current_idx = path[i]
+            seq_j = sequences[current_idx]
+
+            # Find the overlap info for this edge
+            overlap = 0
+            for edge in graph.get(prev_idx, []):
+                if edge[0] == current_idx:
+                    overlap = edge[2]  # The third element is overlap length
+                    break
+
+            current_seq += seq_j[overlap:]
+
+        contigs.append(current_seq)
+
+    return contigs
+
+
+def find_best_overlap(seq1, seq2, min_overlap, max_mismatches):
+    """
+    Find best approximate overlap between two sequences
+    Returns: (overlap_length, mismatch_count)
+    """
+    best_overlap = 0
+    best_mismatches = max_mismatches + 1
+    len1, len2 = len(seq1), len(seq2)
+
+    # Check suffix of seq1 vs prefix of seq2
+    for overlap in range(min_overlap, min(len1, len2) + 1):
+        suffix = seq1[-overlap:]
+        prefix = seq2[:overlap]
+        mismatches = sum(1 for a, b in zip(suffix, prefix) if a != b)
+
+        if mismatches <= max_mismatches and mismatches < best_mismatches:
+            best_overlap = overlap
+            best_mismatches = mismatches
+
+    # Check prefix of seq1 vs suffix of seq2
+    for overlap in range(min_overlap, min(len1, len2) + 1):
+        prefix = seq1[:overlap]
+        suffix = seq2[-overlap:]
+        mismatches = sum(1 for a, b in zip(prefix, suffix) if a != b)
+
+        if mismatches <= max_mismatches and mismatches < best_mismatches:
+            best_overlap = overlap
+            best_mismatches = mismatches
+
+    return best_overlap, best_mismatches
+
+
+def calculate_probability_score(overlap_len, mismatches, mutation_rate):
+    """
+    Calculate log-probability score for an overlap:
+    score = (overlap_len - mismatches)*log(1-mutation_rate) + mismatches*log(mutation_rate)
+    """
+    if mutation_rate <= 0 or mutation_rate >= 1:
+        mutation_rate = 0.01  # Default to 1% mutation rate
+
+    # Avoid log(0) issues
+    safe_log = lambda x: math.log(max(x, 1e-10))
+
+    match_score = (overlap_len - mismatches) * safe_log(1 - mutation_rate)
+    mismatch_score = mismatches * safe_log(mutation_rate)
+    return match_score + mismatch_score
+
+
+def probabilistic_assembly(
+    seq_list, min_overlap=18, max_mismatches=3, mutation_rate=0.01
+):
+    """
+    Probabilistic assembly using likelihood scores and path optimization
+    """
+    if len(seq_list) <= 1:
+        return seq_list
+
+    # Build overlap graph
+    graph = build_overlap_graph(seq_list, min_overlap, max_mismatches, mutation_rate)
+
+    # Find best paths using probabilistic scoring
+    contigs = find_best_paths(graph, seq_list)
+
+    return contigs
+
+
+def build_overlap_graph(sequences, min_overlap, max_mismatches, mutation_rate):
+    """Construct directed graph of sequence overlaps with probability scores"""
+    graph = {i: [] for i in range(len(sequences))}
+
+    for i in range(len(sequences)):
+        for j in range(len(sequences)):
+            if i == j:
+                continue
+
+            # Check suffix of i to prefix of j
+            overlap, mismatches = find_best_overlap(
+                sequences[i], sequences[j], min_overlap, max_mismatches
+            )
+
+            if overlap >= min_overlap:
+                # Calculate probability score
+                prob_score = calculate_probability_score(
+                    overlap, mismatches, mutation_rate
+                )
+                graph[i].append((j, prob_score, overlap))
+
+    return graph

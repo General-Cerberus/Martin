@@ -46,6 +46,7 @@ from helpers import (
     find_approximate_overlap,
     parse_fasta_with_ranges,
     parse_header_ranges,
+    probabilistic_assembly,
     SequenceWithRange,
 )
 
@@ -205,55 +206,132 @@ def assemble_sequences(seq_list, min_overlap=18, max_mismatches=3, mutation_rate
     return contigs
 
 
-def assemble_sequences_with_ranges(sequences, min_overlap=18, max_mismatches=3):
+def assemble_sequences_with_ranges(
+    sequences,
+    min_overlap=18,
+    max_mismatches=3,
+    mutation_rate=0.01,
+    overlap_threshold=0.8,
+    assembly_method="probabilistic",
+):
     """
-    Assemble sequences grouped by genomic range
+    Assemble sequences with range support and choice of assembly method
     """
-    # Cluster sequences by genomic range.
-    clusters = cluster_by_genomic_range(sequences)
-    print(f"Grouped {len(sequences)} sequences into {len(clusters)} genomic clusters")
+    # Cluster sequences by genomic range
+    clusters = cluster_by_genomic_range(sequences, overlap_threshold)
 
+    # Separate clustered and unclustered sequences
+    clustered_seqs = [seq for cluster in clusters for seq in cluster]
+    unclustered_seqs = [seq for seq in sequences if seq not in clustered_seqs]
+
+    print(f"\nClustering Results:")
+    print(f"- Formed {len(clusters)} genomic clusters")
+    print(f"- {len(clustered_seqs)} sequences grouped by genomic position")
+    print(f"- {len(unclustered_seqs)} sequences without position data")
+
+    # Assemble each cluster separately
     assembled_contigs = []
 
+    # Process genomic clusters
     for i, cluster in enumerate(clusters):
+        # Skip empty clusters
+        if not cluster:
+            continue
+
+        # Get cluster info
+        contig_id = cluster[0].contig
+        min_start = min(seq.start for seq in cluster)
+        max_end = max(seq.end for seq in cluster)
+
         print(
-            f"\nAssembling cluster {i+1}/{len(clusters)}: "
-            f"{len(cluster)} sequences, contig={cluster[0].contig}"
+            f"\nAssembling Cluster {i+1}/{len(clusters)}: "
+            f"contig={contig_id}, "
+            f"{len(cluster)} sequences, "
+            f"span={min_start}-{max_end}"
         )
 
-        # Extract sequences for assembly.
+        # Extract sequences for assembly
         seq_list = [seq.sequence for seq in cluster]
 
-        # Assemble this cluster.
-        contigs = assemble_sequences(
-            seq_list, min_overlap=min_overlap, max_mismatches=max_mismatches
-        )
+        # Choose assembly method based on cluster size
+        if assembly_method == "probabilistic" and len(seq_list) <= 50:
+            print("Using probabilistic assembly method")
+            contigs = probabilistic_assembly(
+                seq_list,
+                min_overlap=min_overlap,
+                max_mismatches=max_mismatches,
+                mutation_rate=mutation_rate,
+            )
+        else:
+            # Use greedy for large clusters or when probabilistic not selected
+            if assembly_method == "probabilistic" and len(seq_list) > 50:
+                print(
+                    f"Cluster too large ({len(seq_list)} sequences), using greedy method"
+                )
+            else:
+                print("Using greedy assembly method")
 
-        # Create headers with cluster info.
+            contigs = assemble_sequences(
+                seq_list,
+                min_overlap=min_overlap,
+                max_mismatches=max_mismatches,
+                mutation_rate=mutation_rate,
+            )
+
+        # Create annotated headers
         for j, contig_seq in enumerate(contigs):
+            sources = len([seq for seq in cluster if seq.sequence in contig_seq])
+
             header = (
                 f"Cluster_{i+1}_Contig_{j+1}_"
-                f"ContigID={cluster[0].contig}_"
-                f"Sources={len(cluster)}_"
+                f"Contig={contig_id}_"
+                f"Sources={sources}_"
                 f"Length={len(contig_seq)}"
             )
 
-            # Try to determine genomic range for contig.
-            min_start = min(seq.start for seq in cluster if seq.start is not None)
-            max_end = max(seq.end for seq in cluster if seq.end is not None)
-            range_info = ""
-            if min_start is not None and max_end is not None:
-                range_info = f"|GenomicRange:{min_start}-{max_end}"
+            if min_start and max_end:
+                header += f"|GenomicRange:{min_start}-{max_end}"
 
             assembled_contigs.append(
                 SequenceWithRange(
-                    header + range_info,
-                    contig_seq,
-                    contig=cluster[0].contig,
-                    start=min_start,
-                    end=max_end,
+                    header, contig_seq, contig=contig_id, start=min_start, end=max_end
                 )
             )
+
+    # Process unclustered sequences
+    if unclustered_seqs:
+        print(f"\nAssembling {len(unclustered_seqs)} unclustered sequences...")
+        seq_list = [seq.sequence for seq in unclustered_seqs]
+
+        # Use probabilistic for small sets, greedy for large
+        if assembly_method == "probabilistic" and len(seq_list) <= 50:
+            print("Using probabilistic assembly for unclustered sequences")
+            contigs = probabilistic_assembly(
+                seq_list,
+                min_overlap=min_overlap,
+                max_mismatches=max_mismatches,
+                mutation_rate=mutation_rate,
+            )
+        else:
+            print("Using greedy assembly for unclustered sequences")
+            contigs = assemble_sequences(
+                seq_list,
+                min_overlap=min_overlap,
+                max_mismatches=max_mismatches,
+                mutation_rate=mutation_rate,
+            )
+
+        for j, contig_seq in enumerate(contigs):
+            sources = len(
+                [seq for seq in unclustered_seqs if seq.sequence in contig_seq]
+            )
+            header = (
+                f"Unclustered_Contig_{j+1}_"
+                f"Sources={sources}_"
+                f"Length={len(contig_seq)}"
+            )
+
+            assembled_contigs.append(SequenceWithRange(header, contig_seq))
 
     return assembled_contigs
 
@@ -263,21 +341,21 @@ def assemble_mode():
     print("= Enhanced Assembly with Mutation Tolerance & Range Support =")
     print("=" * 50 + "\n")
 
-    # Initialize storage for sequences with range data.
+    # Initialize storage for sequences with range data
     sequences = []
 
-    # Get input file from user.
+    # Get input file from user
     input_file = input(
         "Enter FASTA file with range information (or press Enter for manual input): "
     ).strip()
 
-    # File-based input.
+    # File-based input
     if input_file:
         if not os.path.exists(input_file):
             print(f"Error: File {input_file} not found.")
             return
 
-        # Parse FASTA with range information.
+        # Parse FASTA with range information
         fasta_dict = parse_fasta_with_ranges(input_file)
         if not fasta_dict:
             return
@@ -285,7 +363,7 @@ def assemble_mode():
         sequences = list(fasta_dict.values())
         print(f"Loaded {len(sequences)} sequences with genomic ranges")
 
-    # Manual input option.
+    # Manual input option
     else:
         print("\nManual Sequence Input with Genomic Ranges")
         print("Format: sequence|contig:start-end")
@@ -299,7 +377,7 @@ def assemble_mode():
             if not user_input:
                 break
 
-            # Parse manual input.
+            # Parse manual input
             if "|" in user_input:
                 seq_part, range_part = user_input.split("|", 1)
                 header = f"Manual|{range_part}"
@@ -316,7 +394,7 @@ def assemble_mode():
         print("No sequences provided.")
         return
 
-    # Get assembly parameters.
+    # Get assembly parameters
     print("\nAssembly Parameters:")
     min_overlap = int(input("  Minimum overlap length (default 18): ") or 18)
     max_mismatches = int(input("  Max allowed mismatches (default 3): ") or 3)
@@ -325,108 +403,46 @@ def assemble_mode():
         input("  Genomic overlap threshold (0.0-1.0, default 0.8): ") or 0.8
     )
 
-    # Cluster sequences by genomic range.
-    clusters = cluster_by_genomic_range(sequences, overlap_threshold)
+    # Get assembly method
+    print("\nAssembly Methods:")
+    print("  1. Greedy (faster, good for low mutation)")
+    print("  2. Probabilistic (slower, better for high mutation/quasi-species)")
+    method_choice = input("Choose assembly method (1 or 2, default 1): ") or "1"
+    assembly_method = "probabilistic" if method_choice == "2" else "greedy"
 
-    # Separate clustered and unclustered sequences.
-    clustered_seqs = [seq for cluster in clusters for seq in cluster]
-    unclustered_seqs = [seq for seq in sequences if seq not in clustered_seqs]
+    # Perform range-based assembly
+    assembled_contigs = assemble_sequences_with_ranges(
+        sequences,
+        min_overlap=min_overlap,
+        max_mismatches=max_mismatches,
+        mutation_rate=mutation_rate,
+        overlap_threshold=overlap_threshold,
+        assembly_method=assembly_method,
+    )
 
-    print(f"\nClustering Results:")
-    print(f"- Formed {len(clusters)} genomic clusters")
-    print(f"- {len(clustered_seqs)} sequences grouped by genomic position")
-    print(f"- {len(unclustered_seqs)} sequences without position data")
-
-    # Assemble each cluster separately.
-    assembled_contigs = []
-
-    # Process genomic clusters.
-    for i, cluster in enumerate(clusters):
-        print(
-            f"\nAssembling Cluster {i+1}/{len(clusters)}: "
-            f"contig={cluster[0].contig}, "
-            f"{len(cluster)} sequences, "
-            f"span={min(s.start for s in cluster)}-{max(s.end for s in cluster)}"
-        )
-
-        # Extract sequences for assembly.
-        seq_list = [seq.sequence for seq in cluster]
-
-        # Assemble with mutation tolerance.
-        contigs = assemble_sequences(
-            seq_list,
-            min_overlap=min_overlap,
-            max_mismatches=max_mismatches,
-            mutation_rate=mutation_rate,
-        )
-
-        # Create annotated headers.
-        for j, contig_seq in enumerate(contigs):
-            min_start = min(seq.start for seq in cluster)
-            max_end = max(seq.end for seq in cluster)
-            sources = len([seq for seq in cluster if seq.sequence in contig_seq])
-
-            header = (
-                f"Cluster_{i+1}_Contig_{j+1}_"
-                f"Contig={cluster[0].contig}_"
-                f"Sources={sources}_"
-                f"Length={len(contig_seq)}"
-            )
-
-            if min_start and max_end:
-                header += f"|GenomicRange:{min_start}-{max_end}"
-
-            assembled_contigs.append(
-                SequenceWithRange(
-                    header,
-                    contig_seq,
-                    contig=cluster[0].contig,
-                    start=min_start,
-                    end=max_end,
-                )
-            )
-
-    # Process unclustered sequences.
-    if unclustered_seqs:
-        print(f"\nAssembling {len(unclustered_seqs)} unclustered sequences...")
-        seq_list = [seq.sequence for seq in unclustered_seqs]
-        contigs = assemble_sequences(
-            seq_list,
-            min_overlap=min_overlap,
-            max_mismatches=max_mismatches,
-            mutation_rate=mutation_rate,
-        )
-
-        for j, contig_seq in enumerate(contigs):
-            sources = len(
-                [seq for seq in unclustered_seqs if seq.sequence in contig_seq]
-            )
-            header = (
-                f"Unclustered_Contig_{j+1}_"
-                f"Sources={sources}_"
-                f"Length={len(contig_seq)}"
-            )
-
-            assembled_contigs.append(SequenceWithRange(header, contig_seq))
-
-    # Output results.
+    # Output results
     print("\nAssembly complete!")
     print(
         f"Generated {len(assembled_contigs)} contigs from {len(sequences)} input sequences"
     )
 
-    # Save to file.
+    # Save to file
     output_file = input("\nEnter output filename (.fasta): ")
+    if not output_file.endswith(".fasta"):
+        output_file += ".fasta"
+
     try:
         with open(output_file, "w") as out:
             for contig in assembled_contigs:
                 out.write(f">{contig.header}\n{contig.sequence}\n")
         print(f"Results saved to {output_file}")
 
-        # Generate cluster report.
+        # Generate cluster report
         report_file = os.path.splitext(output_file)[0] + "_report.csv"
         with open(report_file, "w") as report:
-            report.write("Cluster,Contig,ContigID,Start,End,Length,Sources,Type\n")
+            report.write(
+                "Cluster,Contig,ContigID,Start,End,Length,Sources,Type,AssemblyMethod\n"
+            )
             for contig in assembled_contigs:
                 parts = contig.header.split("_")
                 cluster_id = parts[1] if "Cluster" in contig.header else "NA"
@@ -435,7 +451,8 @@ def assemble_mode():
                 report.write(f"{contig.start or 'NA'},{contig.end or 'NA'},")
                 report.write(f"{len(contig.sequence)},")
                 report.write(f"{contig.header.split('Sources=')[1].split('_')[0]},")
-                report.write(f"{'Genomic' if contig.contig else 'Unclustered'}\n")
+                report.write(f"{'Genomic' if contig.contig else 'Unclustered'},")
+                report.write(f"{assembly_method}\n")
         print(f"Cluster report saved to {report_file}")
 
     except IOError as e:
@@ -564,3 +581,7 @@ def main():
             print("Invalid selection. Please choose s, o, f, or q.")
 
         input("\nPress Enter to continue...")
+
+
+if __name__ == "__main__":
+    main()
