@@ -41,6 +41,7 @@ This program provides three modes of operation:
 
 import csv
 import os
+from helpers import find_approximate_overlap
 
 
 def parse_fasta(fasta_file):
@@ -128,109 +129,71 @@ def extract_sequences():
         print(f"Output error: {str(e)}")
 
 
-def assembly_mp_worker(seq, other_seqs, min_overlap):
-    pass
-
-
-def assemble_sequences(seq_list):
+def assemble_sequences(seq_list, min_overlap=18, max_mismatches=3, mutation_rate=0.01):
     """
-    Assemble sequences using overlap detection with adjustable threshold.
-    Returns a list of assembled contigs. Sequences are only joined if they overlap.
+    Assemble sequences with mutation tolerance
     """
     if not seq_list:
         return []
     if len(seq_list) == 1:
         return seq_list
 
-    # Normalize case and remove duplicates.
+    # Normalize sequences
     seqs = list(set([s.upper() for s in seq_list]))
 
-    # We can probably save some time if we sort by length, shortest first, then check if any of the shorter sequences are completely contained in the longer ones.
-    """
-    seqs.sort(key=len)
-    print(f"Total sequences in original list: {len(seqs)}")
-    for i in range(len(seqs) - 1):
-        # Report on progress every 100 sequences.
-        if i % 100 == 0:
-            print(f"Checking containment for sequence {i + 1}/{len(seqs)}…")
-        # Check against other sequences starting with the largest ones and working down, in order to maximize the chance of finding containment.
-        for j in range(len(seqs) - 1, i, -1):
-            if len(seqs[i]) == len(seqs[j]):
-                # If they are the same length, skip this check.
-                continue
-            if seqs[i] in seqs[j]:
-                print("Found containment, removing.")
-                del seqs[i]
-                break
-    # After containment check, report how many sequences remain.
-    print(f"Total sequences after containment check: {len(seqs)}")
-    """
+    # Get parameters from user if not provided
+    if min_overlap is None:
+        min_overlap = int(input("Enter minimum overlap length (default 18): ") or 18)
+    if max_mismatches is None:
+        max_mismatches = int(input("Enter max allowed mismatches (default 3): ") or 3)
 
-    # Get minimum overlap threshold from user.
-    min_overlap = int(input("Enter minimum overlap length (default 18): ") or 18)
-    if min_overlap < 1:
-        print("Overlap length must be at least 1.")
-        return seq_list
-    if min_overlap > 1000:
-        print("Warning: Very high minimum overlap may lead to no matches.")
-
-    # Track which sequences have been merged
+    # Track merged sequences
     merged = [False] * len(seqs)
     contigs = []
 
-    """
-    # Set up multiprocessing.
-    num_cores = os.cpu_count() or 1
-    print(f"Using {num_cores} CPU cores for processing.")
-    """
-
-    # Try to build contigs from each unmerged sequence.
     for i in range(len(seqs)):
-        # Print progress.
-        if i % 10 == 0:
-            print(f"Processing sequence {i + 1}/{len(seqs)}…")
-
         if merged[i]:
             continue
 
-        # Start a new contig with this sequence.
         current_contig = seqs[i]
         merged[i] = True
         made_merge = True
 
-        # Keep trying to extend this contig until no more merges possible.
         while made_merge:
             made_merge = False
-            best_match = (0, -1, "")  # (overlap, index, merged_sequence)
+            best_candidate = None
+            best_overlap = min_overlap - 1  # Initialize below threshold
+            best_mismatches = max_mismatches + 1
+            best_merged = None
 
-            # Look for best overlap with any unmerged sequence.
             for j in range(len(seqs)):
                 if merged[j]:
                     continue
 
-                a, b = current_contig, seqs[j]
+                # Calculate approximate overlap
+                overlap_len, mismatches, merged_seq = find_approximate_overlap(
+                    current_contig, seqs[j], min_overlap, max_mismatches
+                )
 
-                # Check suffix of contig vs prefix of candidate.
-                if a.endswith(b[:min_overlap]):
-                    merged_seq = a + b[min_overlap:]
-                    if min_overlap > best_match[0]:
-                        best_match = (min_overlap, j, merged_seq)
-                    break
+                # Calculate quality score (higher is better)
+                quality = overlap_len * (1 - mutation_rate) - mismatches * mutation_rate
 
-                # Check prefix of contig vs suffix of candidate.
-                if b.endswith(a[:min_overlap]):
-                    merged_seq = b + a[min_overlap:]
-                    if min_overlap > best_match[0]:
-                        best_match = (min_overlap, j, merged_seq)
-                    break
+                # Update best candidate
+                if quality > best_overlap:
+                    best_candidate = j
+                    best_overlap = quality
+                    best_mismatches = mismatches
+                    best_merged = merged_seq
 
-            # Apply best match if found.
-            if best_match[0] >= min_overlap:
-                current_contig = best_match[2]
-                merged[best_match[1]] = True
+            # Merge if we found a suitable candidate
+            if best_merged:
+                current_contig = best_merged
+                merged[best_candidate] = True
                 made_merge = True
+                print(
+                    f"Merged with {best_overlap:.1f} quality (overlap: {best_overlap}, mismatches: {best_mismatches})"
+                )
 
-        # Add the finished contig to our results.
         contigs.append(current_contig)
 
     return contigs
@@ -300,8 +263,19 @@ def assemble_mode():
         print("No sequences provided.")
         return
 
-    print(f"\nAssembling {len(sequences)} sequences…")
-    result_contigs = assemble_sequences(sequences)
+    print(f"\nAssembling {len(sequences)} sequences with mutation tolerance...")
+
+    # Get mutation parameters
+    min_overlap = int(input("Minimum overlap length (default 18): ") or 18)
+    max_mismatches = int(input("Max allowed mismatches (default 3): ") or 3)
+    mutation_rate = float(input("Mutation rate (default 0.01): ") or 0.01)
+
+    result_contigs = assemble_sequences(
+        sequences,
+        min_overlap=min_overlap,
+        max_mismatches=max_mismatches,
+        mutation_rate=mutation_rate,
+    )
 
     print("\nAssembly complete!")
     if len(result_contigs) == 1:
