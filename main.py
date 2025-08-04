@@ -41,7 +41,13 @@ This program provides three modes of operation:
 
 import csv
 import os
-from helpers import find_approximate_overlap
+from helpers import (
+    cluster_by_genomic_range,
+    find_approximate_overlap,
+    parse_fasta_with_ranges,
+    parse_header_ranges,
+    SequenceWithRange,
+)
 
 
 def parse_fasta(fasta_file):
@@ -199,110 +205,241 @@ def assemble_sequences(seq_list, min_overlap=18, max_mismatches=3, mutation_rate
     return contigs
 
 
+def assemble_sequences_with_ranges(sequences, min_overlap=18, max_mismatches=3):
+    """
+    Assemble sequences grouped by genomic range
+    """
+    # Cluster sequences by genomic range.
+    clusters = cluster_by_genomic_range(sequences)
+    print(f"Grouped {len(sequences)} sequences into {len(clusters)} genomic clusters")
+
+    assembled_contigs = []
+
+    for i, cluster in enumerate(clusters):
+        print(
+            f"\nAssembling cluster {i+1}/{len(clusters)}: "
+            f"{len(cluster)} sequences, contig={cluster[0].contig}"
+        )
+
+        # Extract sequences for assembly.
+        seq_list = [seq.sequence for seq in cluster]
+
+        # Assemble this cluster.
+        contigs = assemble_sequences(
+            seq_list, min_overlap=min_overlap, max_mismatches=max_mismatches
+        )
+
+        # Create headers with cluster info.
+        for j, contig_seq in enumerate(contigs):
+            header = (
+                f"Cluster_{i+1}_Contig_{j+1}_"
+                f"ContigID={cluster[0].contig}_"
+                f"Sources={len(cluster)}_"
+                f"Length={len(contig_seq)}"
+            )
+
+            # Try to determine genomic range for contig.
+            min_start = min(seq.start for seq in cluster if seq.start is not None)
+            max_end = max(seq.end for seq in cluster if seq.end is not None)
+            range_info = ""
+            if min_start is not None and max_end is not None:
+                range_info = f"|GenomicRange:{min_start}-{max_end}"
+
+            assembled_contigs.append(
+                SequenceWithRange(
+                    header + range_info,
+                    contig_seq,
+                    contig=cluster[0].contig,
+                    start=min_start,
+                    end=max_end,
+                )
+            )
+
+    return assembled_contigs
+
+
 def assemble_mode():
-    """
-    Interactive sequence assembly with input validation.
-    Accepts manually entered sequences or sequences from a FASTA file.
-    """
+    print("\n" + "=" * 50)
+    print("= Enhanced Assembly with Mutation Tolerance & Range Support =")
+    print("=" * 50 + "\n")
+
+    # Initialize storage for sequences with range data.
     sequences = []
-    print("\nSequence Assembly Mode")
-    print("----------------------")
-    print("You can enter sequences directly or provide a FASTA file path")
 
-    while True:
-        user_input = input(
-            "Enter sequence or FASTA file path (or press Enter to finish adding): "
-        ).strip()
+    # Get input file from user.
+    input_file = input(
+        "Enter FASTA file with range information (or press Enter for manual input): "
+    ).strip()
 
-        if not user_input:
-            break
+    # File-based input.
+    if input_file:
+        if not os.path.exists(input_file):
+            print(f"Error: File {input_file} not found.")
+            return
 
-        # Check if input is an existing file.
-        if os.path.exists(user_input):
-            # Check if file appears to be in FASTA format.
-            try:
-                with open(user_input, "r") as f:
-                    first_line = f.readline().strip()
-                    if first_line.startswith(">"):
-                        print(f"Reading sequences from FASTA file: {user_input}")
-                        fasta_dict = parse_fasta(user_input)
-                        if fasta_dict:
-                            for acc, (header, seq) in fasta_dict.items():
-                                sequences.append(seq)
-                            print(f"Added {len(fasta_dict)} sequences from file.")
-                        else:
-                            print("No valid sequences found in the file.")
-                        # Skip to next iteration after processing FASTA file.
-                        if (
-                            len(sequences) > 0
-                            and input("Add another sequence? (y/n): ").lower() != "y"
-                        ):
-                            break
-                        continue
-                    else:
-                        print("File exists, but does not appear to be in FASTA format.")
-            except Exception as e:
-                print(f"Error reading file: {str(e)}")
+        # Parse FASTA with range information.
+        fasta_dict = parse_fasta_with_ranges(input_file)
+        if not fasta_dict:
+            return
 
-        # If we get here, treat as direct sequence input.
-        if len(user_input) < 3:
-            print("Invalid sequence. Please enter at least 3 characters.")
-            continue
+        sequences = list(fasta_dict.values())
+        print(f"Loaded {len(sequences)} sequences with genomic ranges")
 
-        # Validate DNA sequence.
-        if any(c not in "ACGTacgt" for c in user_input):
-            print("Warning: Sequence contains non-DNA characters.")
+    # Manual input option.
+    else:
+        print("\nManual Sequence Input with Genomic Ranges")
+        print("Format: sequence|contig:start-end")
+        print("Example: ATGCGATACGT|NC_001416:1024-49526")
+        print("Leave range empty for sequences without position data")
 
-        sequences.append(user_input)
-        print(f"Added sequence of length {len(user_input)}.")
+        while True:
+            user_input = input(
+                "\nEnter sequence with range (or blank to finish): "
+            ).strip()
+            if not user_input:
+                break
 
-        if input("Add another sequence? (y/n): ").lower() != "y":
-            break
+            # Parse manual input.
+            if "|" in user_input:
+                seq_part, range_part = user_input.split("|", 1)
+                header = f"Manual|{range_part}"
+                accession, contig, start, end = parse_header_ranges(header)
+                sequences.append(
+                    SequenceWithRange(accession, seq_part.upper(), contig, start, end)
+                )
+                print(f"Added sequence: {contig}:{start}-{end} ({len(seq_part)} bp)")
+            else:
+                sequences.append(SequenceWithRange("Manual", user_input.upper()))
+                print(f"Added sequence without range ({len(user_input)} bp)")
 
     if not sequences:
         print("No sequences provided.")
         return
 
-    print(f"\nAssembling {len(sequences)} sequences with mutation tolerance...")
-
-    # Get mutation parameters
-    min_overlap = int(input("Minimum overlap length (default 18): ") or 18)
-    max_mismatches = int(input("Max allowed mismatches (default 3): ") or 3)
-    mutation_rate = float(input("Mutation rate (default 0.01): ") or 0.01)
-
-    result_contigs = assemble_sequences(
-        sequences,
-        min_overlap=min_overlap,
-        max_mismatches=max_mismatches,
-        mutation_rate=mutation_rate,
+    # Get assembly parameters.
+    print("\nAssembly Parameters:")
+    min_overlap = int(input("  Minimum overlap length (default 18): ") or 18)
+    max_mismatches = int(input("  Max allowed mismatches (default 3): ") or 3)
+    mutation_rate = float(input("  Estimated mutation rate (default 0.01): ") or 0.01)
+    overlap_threshold = float(
+        input("  Genomic overlap threshold (0.0-1.0, default 0.8): ") or 0.8
     )
 
-    print("\nAssembly complete!")
-    if len(result_contigs) == 1:
-        print(
-            f"All sequences were assembled into one contig of length {len(result_contigs[0])} bp."
-        )
-        print("\nAssembled sequence:")
-        result = result_contigs[0]
-        print(result[:128] + "…" if len(result) > 128 else result)
-    else:
-        print(f"Assembled into {len(result_contigs)} separate contigs.")
-        for i, contig in enumerate(result_contigs, 1):
-            print(f"\nContig {i} (length: {len(contig)} bp):")
-            print(contig[:64] + "…" if len(contig) > 64 else contig)
+    # Cluster sequences by genomic range.
+    clusters = cluster_by_genomic_range(sequences, overlap_threshold)
 
-    # Save results to file
-    output_file = input("Enter output filename for assembled sequence(s): ")
+    # Separate clustered and unclustered sequences.
+    clustered_seqs = [seq for cluster in clusters for seq in cluster]
+    unclustered_seqs = [seq for seq in sequences if seq not in clustered_seqs]
+
+    print(f"\nClustering Results:")
+    print(f"- Formed {len(clusters)} genomic clusters")
+    print(f"- {len(clustered_seqs)} sequences grouped by genomic position")
+    print(f"- {len(unclustered_seqs)} sequences without position data")
+
+    # Assemble each cluster separately.
+    assembled_contigs = []
+
+    # Process genomic clusters.
+    for i, cluster in enumerate(clusters):
+        print(
+            f"\nAssembling Cluster {i+1}/{len(clusters)}: "
+            f"contig={cluster[0].contig}, "
+            f"{len(cluster)} sequences, "
+            f"span={min(s.start for s in cluster)}-{max(s.end for s in cluster)}"
+        )
+
+        # Extract sequences for assembly.
+        seq_list = [seq.sequence for seq in cluster]
+
+        # Assemble with mutation tolerance.
+        contigs = assemble_sequences(
+            seq_list,
+            min_overlap=min_overlap,
+            max_mismatches=max_mismatches,
+            mutation_rate=mutation_rate,
+        )
+
+        # Create annotated headers.
+        for j, contig_seq in enumerate(contigs):
+            min_start = min(seq.start for seq in cluster)
+            max_end = max(seq.end for seq in cluster)
+            sources = len([seq for seq in cluster if seq.sequence in contig_seq])
+
+            header = (
+                f"Cluster_{i+1}_Contig_{j+1}_"
+                f"Contig={cluster[0].contig}_"
+                f"Sources={sources}_"
+                f"Length={len(contig_seq)}"
+            )
+
+            if min_start and max_end:
+                header += f"|GenomicRange:{min_start}-{max_end}"
+
+            assembled_contigs.append(
+                SequenceWithRange(
+                    header,
+                    contig_seq,
+                    contig=cluster[0].contig,
+                    start=min_start,
+                    end=max_end,
+                )
+            )
+
+    # Process unclustered sequences.
+    if unclustered_seqs:
+        print(f"\nAssembling {len(unclustered_seqs)} unclustered sequences...")
+        seq_list = [seq.sequence for seq in unclustered_seqs]
+        contigs = assemble_sequences(
+            seq_list,
+            min_overlap=min_overlap,
+            max_mismatches=max_mismatches,
+            mutation_rate=mutation_rate,
+        )
+
+        for j, contig_seq in enumerate(contigs):
+            sources = len(
+                [seq for seq in unclustered_seqs if seq.sequence in contig_seq]
+            )
+            header = (
+                f"Unclustered_Contig_{j+1}_"
+                f"Sources={sources}_"
+                f"Length={len(contig_seq)}"
+            )
+
+            assembled_contigs.append(SequenceWithRange(header, contig_seq))
+
+    # Output results.
+    print("\nAssembly complete!")
+    print(
+        f"Generated {len(assembled_contigs)} contigs from {len(sequences)} input sequences"
+    )
+
+    # Save to file.
+    output_file = input("\nEnter output filename (.fasta): ")
     try:
         with open(output_file, "w") as out:
-            for i, contig in enumerate(result_contigs, 1):
-                if len(result_contigs) == 1:
-                    out.write(f">assembled_sequence\n{contig}\n")
-                else:
-                    out.write(f">contig_{i}_length_{len(contig)}\n{contig}\n")
-        print(f"Results saved to {output_file}.")
+            for contig in assembled_contigs:
+                out.write(f">{contig.header}\n{contig.sequence}\n")
+        print(f"Results saved to {output_file}")
+
+        # Generate cluster report.
+        report_file = os.path.splitext(output_file)[0] + "_report.csv"
+        with open(report_file, "w") as report:
+            report.write("Cluster,Contig,ContigID,Start,End,Length,Sources,Type\n")
+            for contig in assembled_contigs:
+                parts = contig.header.split("_")
+                cluster_id = parts[1] if "Cluster" in contig.header else "NA"
+                contig_id = parts[3] if len(parts) > 3 else "1"
+                report.write(f"{cluster_id},{contig_id},{contig.contig or 'NA'},")
+                report.write(f"{contig.start or 'NA'},{contig.end or 'NA'},")
+                report.write(f"{len(contig.sequence)},")
+                report.write(f"{contig.header.split('Sources=')[1].split('_')[0]},")
+                report.write(f"{'Genomic' if contig.contig else 'Unclustered'}\n")
+        print(f"Cluster report saved to {report_file}")
+
     except IOError as e:
-        print(f"Error saving result: {str(e)}.")
+        print(f"Error saving results: {str(e)}")
 
 
 def filter_tabular():
@@ -397,34 +534,33 @@ def filter_tabular():
 
 
 def main():
-    """Main program interface with enhanced user experience."""
-    print("\n" + "=" * 38)
-    print("\n= FASTA & Tabular Processing Toolkit =")
-    print("\n" + "=" * 38)
+    print("\n" + "=" * 46)
+    print("= Viral Genome Assembly Toolkit (Mutation + Range Support) =")
+    print("=" * 46)
+    print("Features:")
+    print("- Mutation-tolerant assembly (viral quasi-species support)")
+    print("- Genomic range-based clustering")
+    print("- Detailed assembly reporting\n")
 
     while True:
         print("\nMain Menu:")
-        print("  s : Extract sequences by accession.")
-        print("  o : Assemble sequences by overlap.")
-        print("  f : Filter tabular file by column content.")
-        print("  q : Quit.")
+        print("  s : Extract sequences by accession")
+        print("  o : Assemble sequences with mutation tolerance & range support")
+        print("  f : Filter tabular file by column content")
+        print("  q : Quit")
 
-        choice = input("\nSelect mode: ").upper()
+        choice = input("\nSelect mode: ").lower()
 
-        if choice.upper() in ("S", "EXTRACT"):
+        if choice in ("s", "extract"):
             extract_sequences()
-        elif choice.upper() in ("O", "0", "ASSEMBLE"):
+        elif choice in ("o", "0", "assemble"):
             assemble_mode()
-        elif choice.upper() in ("F", "FILTER"):
+        elif choice in ("f", "filter"):
             filter_tabular()
-        elif choice.upper() in ("Q", "QUIT"):
+        elif choice in ("q", "quit"):
             print("\nExiting program. Goodbye!")
             break
         else:
             print("Invalid selection. Please choose s, o, f, or q.")
 
-        input("\nPress Enter to continue…")
-
-
-if __name__ == "__main__":
-    main()
+        input("\nPress Enter to continue...")
