@@ -44,47 +44,12 @@ import os
 from helpers import (
     cluster_by_genomic_range,
     find_approximate_overlap,
+    parse_fasta,
     parse_fasta_with_ranges,
     parse_header_ranges,
     probabilistic_assembly,
     SequenceWithRange,
 )
-
-
-def parse_fasta(fasta_file):
-    """
-    Parse FASTA files into a dictionary with accessions as keys.
-    Handles multi-line sequences and missing files gracefully.
-    """
-    if not os.path.exists(fasta_file):
-        print(f"Error: FASTA file {fasta_file} not found.")
-        return {}
-
-    fasta_dict = {}
-    current_id = None
-    current_header = ""
-    current_seq = []
-
-    try:
-        with open(fasta_file, "r") as f:
-            for line in f:
-                line = line.strip()
-                if line.startswith(">"):
-                    if current_id is not None:
-                        fasta_dict[current_id] = (current_header, "".join(current_seq))
-                    current_header = line[1:]
-                    current_id = current_header.split()[0]
-                    current_seq = []
-                else:
-                    current_seq.append(line)
-
-            if current_id is not None:
-                fasta_dict[current_id] = (current_header, "".join(current_seq))
-        return fasta_dict
-
-    except Exception as e:
-        print(f"Error parsing FASTA: {str(e)}.")
-        return {}
 
 
 def extract_sequences():
