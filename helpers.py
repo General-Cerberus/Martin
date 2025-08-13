@@ -51,7 +51,7 @@ def find_approximate_overlap(seq1, seq2, min_overlap=18, max_mismatches=3):
     best_mismatches = float("inf")
     merged_seq = None
 
-    # Check suffix of seq1 vs prefix of seq2
+    # Check suffix of seq1 vs prefix of seq2.
     for overlap in range(min_overlap, min(len(seq1), len(seq2)) + 1):
         suffix = seq1[-overlap:]
         prefix = seq2[:overlap]
@@ -62,7 +62,7 @@ def find_approximate_overlap(seq1, seq2, min_overlap=18, max_mismatches=3):
             best_mismatches = mismatches
             merged_seq = seq1 + seq2[overlap:]
 
-    # Check prefix of seq1 vs suffix of seq2
+    # Check prefix of seq1 vs suffix of seq2.
     for overlap in range(min_overlap, min(len(seq1), len(seq2)) + 1):
         prefix = seq1[:overlap]
         suffix = seq2[-overlap:]
@@ -146,16 +146,16 @@ def parse_header_ranges(header):
     accession = header.split()[0]
     contig, start, end = None, None, None
 
-    # Try pipe-separated format
+    # Try pipe-separated format.
     if "|" in header:
         parts = header.split("|")
         if len(parts) > 1:
             range_info = parts[1].strip()
     else:
-        # Try space-separated format
+        # Try space-separated format.
         range_info = header.split(" ")[-1].strip()
 
-    # Parse range information
+    # Parse range information.
     if ":" in range_info and "-" in range_info:
         contig_part, range_part = range_info.split(":", 1)
         contig = contig_part.strip()
@@ -166,7 +166,7 @@ def parse_header_ranges(header):
                 start = int(start_str)
                 end = int(end_str)
             except ValueError:
-                # Handle non-integer ranges gracefully
+                # Handle non-integer ranges gracefully.
                 pass
 
     return accession, contig, start, end
@@ -174,10 +174,10 @@ def parse_header_ranges(header):
 
 def cluster_by_genomic_range(sequences, overlap_threshold=0.8):
     """Group sequences by overlapping genomic positions"""
-    # Group by contig first
+    # Group by contig first.
     contig_groups = {}
     for seq in sequences:
-        # Skip sequences without range info
+        # Skip sequences without range info.
         if not seq.contig or seq.start is None or seq.end is None:
             continue
 
@@ -185,28 +185,28 @@ def cluster_by_genomic_range(sequences, overlap_threshold=0.8):
             contig_groups[seq.contig] = []
         contig_groups[seq.contig].append(seq)
 
-    # Cluster each contig group
+    # Cluster each contig group.
     clusters = []
     for contig, seqs in contig_groups.items():
-        # Sort by start position
+        # Sort by start position.
         sorted_seqs = sorted(seqs, key=lambda x: x.start)
 
         current_cluster = []
         last_end = -1
 
         for seq in sorted_seqs:
-            # First sequence in cluster
+            # First sequence in cluster.
             if not current_cluster:
                 current_cluster.append(seq)
                 last_end = seq.end
                 continue
 
-            # Check for overlap
+            # Check for overlap.
             overlap = min(seq.end, last_end) - seq.start
             seq_length = seq.end - seq.start
 
             if overlap > 0:
-                # Calculate overlap percentage
+                # Calculate overlap percentage.
                 overlap_percent = overlap / seq_length if seq_length > 0 else 0
 
                 if overlap_percent >= overlap_threshold:
@@ -214,12 +214,12 @@ def cluster_by_genomic_range(sequences, overlap_threshold=0.8):
                     last_end = max(last_end, seq.end)
                     continue
 
-            # Finalize current cluster and start new one
+            # Finalize current cluster and start new one.
             clusters.append(current_cluster)
             current_cluster = [seq]
             last_end = seq.end
 
-        # Add last cluster for contig
+        # Add last cluster for contig.
         if current_cluster:
             clusters.append(current_cluster)
 
@@ -234,23 +234,23 @@ import math
 
 def find_best_paths(graph, sequences):
     """Find highest probability paths using dynamic programming"""
-    # Find starting nodes (nodes with no incoming edges)
+    # Find starting nodes (nodes with no incoming edges).
     all_targets = set()
     for edges in graph.values():
         for edge in edges:
-            all_targets.add(edge[0])  # edge[0] is the neighbor index
+            all_targets.add(edge[0])  # edge[0] is the neighbor index.
 
     start_nodes = [i for i in graph if i not in all_targets]
 
-    # If no clear start nodes, use all nodes
+    # If no clear start nodes, use all nodes.
     if not start_nodes:
         start_nodes = list(graph.keys())
 
-    # Track best paths
+    # Track best paths.
     best_paths = []
 
     for start in start_nodes:
-        # Initialize DP table: (current_node, path, path_score)
+        # Initialize DP table: (current_node, path, path_score).
         dp = [(start, [start], 0.0)]
         completed_paths = []
 
@@ -258,48 +258,48 @@ def find_best_paths(graph, sequences):
             current, path, score = dp.pop(0)
             extended = False
 
-            # Check if current node has outgoing edges
+            # Check if current node has outgoing edges.
             if current in graph:
                 for edge in graph[current]:
                     neighbor, edge_score, _ = edge
-                    # Avoid cycles
+                    # Avoid cycles.
                     if neighbor in path:
                         continue
 
-                    # Calculate new path score
+                    # Calculate new path score.
                     new_score = score + edge_score
                     new_path = path + [neighbor]
                     dp.append((neighbor, new_path, new_score))
                     extended = True
 
-            # If no extensions, path is complete
+            # If no extensions, path is complete.
             if not extended:
                 completed_paths.append((path, score))
 
-        # Find best path from this start node
+        # Find best path from this start node.
         if completed_paths:
             best_path = max(completed_paths, key=lambda x: x[1])[0]
             best_paths.append(best_path)
 
-    # Convert paths to sequences
+    # Convert paths to sequences.
     contigs = []
     for path in best_paths:
         if len(path) == 1:
             contigs.append(sequences[path[0]])
             continue
 
-        # Build contig from path
+        # Build contig from path.
         current_seq = sequences[path[0]]
         for i in range(1, len(path)):
             prev_idx = path[i - 1]
             current_idx = path[i]
             seq_j = sequences[current_idx]
 
-            # Find the overlap info for this edge
+            # Find the overlap info for this edge.
             overlap = 0
             for edge in graph.get(prev_idx, []):
                 if edge[0] == current_idx:
-                    overlap = edge[2]  # The third element is overlap length
+                    overlap = edge[2]  # The third element is overlap length.
                     break
 
             current_seq += seq_j[overlap:]

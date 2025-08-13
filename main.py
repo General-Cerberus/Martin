@@ -110,16 +110,16 @@ def assemble_sequences(seq_list, min_overlap=18, max_mismatches=3, mutation_rate
     if len(seq_list) == 1:
         return seq_list
 
-    # Normalize sequences
+    # Normalize sequences.
     seqs = list(set([s.upper() for s in seq_list]))
 
-    # Get parameters from user if not provided
+    # Get parameters from user if not provided.
     if min_overlap is None:
         min_overlap = int(input("Enter minimum overlap length (default 18): ") or 18)
     if max_mismatches is None:
         max_mismatches = int(input("Enter max allowed mismatches (default 3): ") or 3)
 
-    # Track merged sequences
+    # Track merged sequences.
     merged = [False] * len(seqs)
     contigs = []
 
@@ -134,7 +134,8 @@ def assemble_sequences(seq_list, min_overlap=18, max_mismatches=3, mutation_rate
         while made_merge:
             made_merge = False
             best_candidate = None
-            best_overlap = min_overlap - 1  # Initialize below threshold
+            # Initialize below threshold.
+            best_overlap = min_overlap - 1
             best_mismatches = max_mismatches + 1
             best_merged = None
 
@@ -142,22 +143,22 @@ def assemble_sequences(seq_list, min_overlap=18, max_mismatches=3, mutation_rate
                 if merged[j]:
                     continue
 
-                # Calculate approximate overlap
+                # Calculate approximate overlap.
                 overlap_len, mismatches, merged_seq = find_approximate_overlap(
                     current_contig, seqs[j], min_overlap, max_mismatches
                 )
 
-                # Calculate quality score (higher is better)
+                # Calculate quality score (higher is better).
                 quality = overlap_len * (1 - mutation_rate) - mismatches * mutation_rate
 
-                # Update best candidate
+                # Update best candidate.
                 if quality > best_overlap:
                     best_candidate = j
                     best_overlap = quality
                     best_mismatches = mismatches
                     best_merged = merged_seq
 
-            # Merge if we found a suitable candidate
+            # Merge if we found a suitable candidate.
             if best_merged:
                 current_contig = best_merged
                 merged[best_candidate] = True
@@ -182,10 +183,10 @@ def assemble_sequences_with_ranges(
     """
     Assemble sequences with range support and choice of assembly method
     """
-    # Cluster sequences by genomic range
+    # Cluster sequences by genomic range.
     clusters = cluster_by_genomic_range(sequences, overlap_threshold)
 
-    # Separate clustered and unclustered sequences
+    # Separate clustered and unclustered sequences.
     clustered_seqs = [seq for cluster in clusters for seq in cluster]
     unclustered_seqs = [seq for seq in sequences if seq not in clustered_seqs]
 
@@ -194,12 +195,12 @@ def assemble_sequences_with_ranges(
     print(f"- {len(clustered_seqs)} sequences grouped by genomic position")
     print(f"- {len(unclustered_seqs)} sequences without position data")
 
-    # Assemble each cluster separately
+    # Assemble each cluster separately.
     assembled_contigs = []
 
-    # Process genomic clusters
+    # Process genomic clusters.
     for i, cluster in enumerate(clusters):
-        # Skip empty clusters
+        # Skip empty clusters.
         if not cluster:
             continue
 
@@ -215,10 +216,10 @@ def assemble_sequences_with_ranges(
             f"span={min_start}-{max_end}"
         )
 
-        # Extract sequences for assembly
+        # Extract sequences for assembly.
         seq_list = [seq.sequence for seq in cluster]
 
-        # Choose assembly method based on cluster size
+        # Choose assembly method based on cluster size.
         if assembly_method == "probabilistic" and len(seq_list) <= 50:
             print("Using probabilistic assembly method")
             contigs = probabilistic_assembly(
@@ -228,7 +229,7 @@ def assemble_sequences_with_ranges(
                 mutation_rate=mutation_rate,
             )
         else:
-            # Use greedy for large clusters or when probabilistic not selected
+            # Use greedy for large clusters or when probabilistic not selected.
             if assembly_method == "probabilistic" and len(seq_list) > 50:
                 print(
                     f"Cluster too large ({len(seq_list)} sequences), using greedy method"
@@ -243,7 +244,7 @@ def assemble_sequences_with_ranges(
                 mutation_rate=mutation_rate,
             )
 
-        # Create annotated headers
+        # Create annotated headers.
         for j, contig_seq in enumerate(contigs):
             sources = len([seq for seq in cluster if seq.sequence in contig_seq])
 
@@ -263,12 +264,12 @@ def assemble_sequences_with_ranges(
                 )
             )
 
-    # Process unclustered sequences
+    # Process unclustered sequences.
     if unclustered_seqs:
         print(f"\nAssembling {len(unclustered_seqs)} unclustered sequences...")
         seq_list = [seq.sequence for seq in unclustered_seqs]
 
-        # Use probabilistic for small sets, greedy for large
+        # Use probabilistic for small sets, greedy for large.
         if assembly_method == "probabilistic" and len(seq_list) <= 50:
             print("Using probabilistic assembly for unclustered sequences")
             contigs = probabilistic_assembly(
@@ -306,21 +307,21 @@ def assemble_mode():
     print("= Enhanced Assembly with Mutation Tolerance & Range Support =")
     print("=" * 50 + "\n")
 
-    # Initialize storage for sequences with range data
+    # Initialize storage for sequences with range data.
     sequences = []
 
-    # Get input file from user
+    # Get input file from user.
     input_file = input(
         "Enter FASTA file with range information (or press Enter for manual input): "
     ).strip()
 
-    # File-based input
+    # File-based input.
     if input_file:
         if not os.path.exists(input_file):
             print(f"Error: File {input_file} not found.")
             return
 
-        # Parse FASTA with range information
+        # Parse FASTA with range information.
         fasta_dict = parse_fasta_with_ranges(input_file)
         if not fasta_dict:
             return
@@ -328,7 +329,7 @@ def assemble_mode():
         sequences = list(fasta_dict.values())
         print(f"Loaded {len(sequences)} sequences with genomic ranges")
 
-    # Manual input option
+    # Manual input option.
     else:
         print("\nManual Sequence Input with Genomic Ranges")
         print("Format: sequence|contig:start-end")
@@ -342,7 +343,7 @@ def assemble_mode():
             if not user_input:
                 break
 
-            # Parse manual input
+            # Parse manual input.
             if "|" in user_input:
                 seq_part, range_part = user_input.split("|", 1)
                 header = f"Manual|{range_part}"
@@ -359,7 +360,7 @@ def assemble_mode():
         print("No sequences provided.")
         return
 
-    # Get assembly parameters
+    # Get assembly parameters.
     print("\nAssembly Parameters:")
     min_overlap = int(input("  Minimum overlap length (default 18): ") or 18)
     max_mismatches = int(input("  Max allowed mismatches (default 3): ") or 3)
@@ -368,14 +369,14 @@ def assemble_mode():
         input("  Genomic overlap threshold (0.0-1.0, default 0.8): ") or 0.8
     )
 
-    # Get assembly method
+    # Get assembly method.
     print("\nAssembly Methods:")
     print("  1. Greedy (faster, good for low mutation)")
     print("  2. Probabilistic (slower, better for high mutation/quasi-species)")
     method_choice = input("Choose assembly method (1 or 2, default 1): ") or "1"
     assembly_method = "probabilistic" if method_choice == "2" else "greedy"
 
-    # Perform range-based assembly
+    # Perform range-based assembly.
     assembled_contigs = assemble_sequences_with_ranges(
         sequences,
         min_overlap=min_overlap,
@@ -385,13 +386,13 @@ def assemble_mode():
         assembly_method=assembly_method,
     )
 
-    # Output results
+    # Output results.
     print("\nAssembly complete!")
     print(
         f"Generated {len(assembled_contigs)} contigs from {len(sequences)} input sequences"
     )
 
-    # Save to file
+    # Save to file.
     output_file = input("\nEnter output filename (.fasta): ")
     if not output_file.endswith(".fasta"):
         output_file += ".fasta"
@@ -402,7 +403,7 @@ def assemble_mode():
                 out.write(f">{contig.header}\n{contig.sequence}\n")
         print(f"Results saved to {output_file}")
 
-        # Generate cluster report
+        # Generate cluster report.
         report_file = os.path.splitext(output_file)[0] + "_report.csv"
         with open(report_file, "w") as report:
             report.write(
