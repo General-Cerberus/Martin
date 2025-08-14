@@ -5,7 +5,7 @@ This Python program provides three modes for bioinformatics and virome analysis 
 ## Installation
 
 ```bash
-# Ensure Python 3 is installed.
+# Ensure Python 3 is installed (skip if you already have it installed -- Macs and Linux systems _should_ have it by default).
 sudo apt install python
 
 # Clone the repository.
