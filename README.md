@@ -11,6 +11,9 @@ sudo apt install python
 # Clone the repository.
 git clone https://github.com/General-Cerberus/Martin.git
 
+# Switch to dev branch.
+git checkout dev
+
 # Navigate to project directory
 cd Martin
 ```
