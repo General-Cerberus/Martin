@@ -5,11 +5,14 @@ This Python program provides three modes for bioinformatics and virome analysis 
 ## Installation
 
 ```bash
-# Ensure Python 3 is installed.
+# Ensure Python 3 is installed (skip if you already have it installed -- Macs and Linux systems _should_ have it by default).
 sudo apt install python
 
 # Clone the repository.
 git clone https://github.com/General-Cerberus/Martin.git
+
+# Switch to dev branch.
+git checkout dev
 
 # Navigate to project directory
 cd Martin
