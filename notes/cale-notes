@@ -1,1 +1,18 @@
+Gen:
+Need to tell people in instructions that this is happening in cammand line/powercell. Most will know this already but should be clarified for those who don't
+
+Need to explain that you need to move the file to the same location as the code on your computer
+
+Need to include how to install git or link to page that does. Also if using powercell on windows you need to
+use an AppStore app for python? There's probably a better way but regardless sould be clarified at some point before release.
+
+
+Code:
+problems with accessing files
+
+Should make outfiles automatically (some do this and some don't?)
+
+Clarify if the .txt needs to be included or not
+
+Said it was doing the greedy search even when other option was chosen
 
