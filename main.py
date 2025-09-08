@@ -447,7 +447,11 @@ def filter_tabular():
             sniffer = csv.Sniffer()
             dialect = sniffer.sniff(sample)
             detected_delim = dialect.delimiter
-            print(f"Detected delimiter: {repr(detected_delim)}")
+            forced_delim = input(
+                f"Detected delimiter {repr(detected_delim)}. Press Enter to use or specify another: "
+            )
+            if forced_delim:
+                detected_delim = forced_delim
     except Exception:
         print("Using default tab delimiter.")
 
